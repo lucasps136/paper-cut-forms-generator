@@ -26,7 +26,13 @@ function createTextureOverlay(svg, id, options = {}) {
 
     // Criar o filtro manualmente
     const defs = svg.defs();
-    const filter = defs.element('filter').attr('id', id);
+    const filter = defs.element('filter')
+        .attr('id', id)
+        .attr('x', '-50%')
+        .attr('y', '-50%')
+        .attr('width', '200%')
+        .attr('height', '200%')
+        .attr('filterUnits', 'objectBoundingBox');
 
     // Calcular fator de intensidade (0-100 → 0.0-0.5)
     const intensityFactor = intensity / 200;
@@ -58,7 +64,7 @@ function createTextureOverlay(svg, id, options = {}) {
         </feComponentTransfer>
 
         <!-- Aplicar o ruído à imagem original usando aritmética -->
-        <!-- k2 = imagem original, k3 = ruído, resultado = cor * (1 + ruído) -->
+        <!-- k2 = imagem original, k3 = ruído -->
         <feComposite
             in="SourceGraphic"
             in2="adjustedNoise"
@@ -68,6 +74,14 @@ function createTextureOverlay(svg, id, options = {}) {
             k3="${intensityFactor * 2}"
             k4="0"
             result="textured"/>
+
+        <!-- CRÍTICO: Clipar o resultado pelos limites da forma original -->
+        <!-- Isso garante que o ruído apareça APENAS dentro da forma -->
+        <feComposite
+            in="textured"
+            in2="SourceAlpha"
+            operator="in"
+            result="final"/>
     `;
 
     return filter;
