@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador Chaos - Distorção Senoidal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.1.2/dist/svg.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+        }
+
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #4f46e5;
+        }
+
+        .canvas-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas-wrapper {
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1;
+        }
+
+        .value-display {
+            display: inline-block;
+            margin-left: 10px;
+            color: #666;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <h2>Controles</h2>
+            
+            <div class="control-group">
+                <label>Forma</label>
+                <select id="shape">
+                    <option value="circle">Círculo</option>
+                    <option value="square">Quadrado</option>
+                    <option value="triangle">Triângulo</option>
+                    <option value="hexagon" selected>Hexágono</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Camadas
+                    <span class="value-display" id="frequencyValue">26</span>
+                </label>
+                <input type="range" id="frequency" min="10" max="40" value="26">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Escala
+                    <span class="value-display" id="scaleValue">22</span>
+                </label>
+                <input type="range" id="scale" min="10" max="40" value="22">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Chaos Y
+                    <span class="value-display" id="chaosYValue">40</span>
+                </label>
+                <input type="range" id="chaosY" min="0" max="100" value="40">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Chaos X
+                    <span class="value-display" id="chaosXValue">44</span>
+                </label>
+                <input type="range" id="chaosX" min="0" max="100" value="44">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Rotação Máxima
+                    <span class="value-display" id="rotateValue">101</span>
+                </label>
+                <input type="range" id="rotate" min="0" max="180" value="101">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Espessura
+                    <span class="value-display" id="strokeValue">2</span>
+                </label>
+                <input type="range" id="stroke" min="1" max="5" value="2">
+            </div>
+
+            <div class="control-group">
+                <label>Cor Inicial</label>
+                <input type="color" id="color1" value="#3498db">
+            </div>
+
+            <div class="control-group">
+                <label>Cor Final</label>
+                <input type="color" id="color2" value="#e74c3c">
+            </div>
+
+            <div class="button-group">
+                <button onclick="generate()">Gerar</button>
+                <button onclick="randomize()">Aleatório</button>
+            </div>
+
+            <div class="button-group">
+                <button onclick="downloadSVG()">Download SVG</button>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <div id="canvas-wrapper"></div>
+        </div>
+    </div>
+
+    <script>
+        // Funções utilitárias
+        function random(min, max, float = false) {
+            const val = Math.random() * (max - min) + min;
+            return float ? val : Math.floor(val);
+        }
+
+        function map(value, start1, stop1, start2, stop2) {
+            return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+        }
+
+        // Interpola entre duas cores hex
+        function interpolateColor(color1, color2, t) {
+            // Converter hex para RGB
+            const c1 = hexToRgb(color1);
+            const c2 = hexToRgb(color2);
+            
+            // Interpolar cada componente
+            const r = Math.round(c1.r + (c2.r - c1.r) * t);
+            const g = Math.round(c1.g + (c2.g - c1.g) * t);
+            const b = Math.round(c1.b + (c2.b - c1.b) * t);
+            
+            return rgbToHex(r, g, b);
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
+        // Configuração
+        const width = 800;
+        const height = 800;
+        let svg;
+
+        // Paths das formas
+        const hexagonPath = 'M400 250L529.904 325V475L400 550L270.096 475V325L400 250Z';
+        const roundedTrianglePath = 'M392.83 239.489C395.767 233.553 404.233 233.553 407.17 239.489L524.189 475.952C526.82 481.269 522.952 487.5 517.019 487.5H282.981C277.048 487.5 273.18 481.269 275.811 475.952L392.83 239.489Z';
+
+        // Distorção senoidal (replica Warp.js)
+        function applyWarpDistortion(element, chaosX, chaosY) {
+            const rand1 = Math.round(random(24, 64));
+            const rand2 = Math.round(random(24, 64));
+
+            // Pega todos os elementos com coordenadas
+            const shapes = element.querySelectorAll('circle, rect, path');
+            
+            shapes.forEach(shape => {
+                const tagName = shape.tagName.toLowerCase();
+                
+                if (tagName === 'circle') {
+                    const cx = parseFloat(shape.getAttribute('cx') || 0);
+                    const cy = parseFloat(shape.getAttribute('cy') || 0);
+                    const r = parseFloat(shape.getAttribute('r') || 0);
+                    
+                    // Criar path circular com distorção
+                    const points = [];
+                    const numPoints = 64;
+                    for (let i = 0; i < numPoints; i++) {
+                        const angle = (i / numPoints) * Math.PI * 2;
+                        let x = cx + Math.cos(angle) * r;
+                        let y = cy + Math.sin(angle) * r;
+                        
+                        // Aplicar distorção senoidal
+                        const distanceFromYCenter = height / 2 - y;
+                        const distanceFromXCenter = width / 2 - x;
+                        const chaosFactorX = map(distanceFromXCenter, 400, -400, 1, chaosX);
+                        const chaosFactorY = map(distanceFromYCenter, 400, -400, 10, chaosY);
+                        
+                        x = x - chaosFactorX * Math.sin(y / rand1);
+                        y = y - chaosFactorY * Math.sin(x / rand2);
+                        
+                        points.push(`${x},${y}`);
+                    }
+                    
+                    // Substituir círculo por path
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', `M ${points.join(' L ')} Z`);
+                    path.setAttribute('fill', shape.getAttribute('fill') || 'none');
+                    path.setAttribute('stroke', shape.getAttribute('stroke') || 'none');
+                    path.setAttribute('stroke-width', shape.getAttribute('stroke-width') || '1');
+                    path.setAttribute('opacity', shape.getAttribute('opacity') || '1');
+                    path.setAttribute('stroke-linecap', shape.getAttribute('stroke-linecap') || 'butt');
+                    
+                    shape.parentNode.replaceChild(path, shape);
+                }
+                else if (tagName === 'rect') {
+                    const x = parseFloat(shape.getAttribute('x') || 0);
+                    const y = parseFloat(shape.getAttribute('y') || 0);
+                    const w = parseFloat(shape.getAttribute('width') || 0);
+                    const h = parseFloat(shape.getAttribute('height') || 0);
+                    
+                    // Criar path retangular com distorção
+                    const corners = [
+                        [x, y],
+                        [x + w, y],
+                        [x + w, y + h],
+                        [x, y + h]
+                    ];
+                    
+                    const points = [];
+                    corners.forEach(corner => {
+                        let px = corner[0];
+                        let py = corner[1];
+                        
+                        // Aplicar distorção
+                        const distanceFromYCenter = height / 2 - py;
+                        const distanceFromXCenter = width / 2 - px;
+                        const chaosFactorX = map(distanceFromXCenter, 400, -400, 1, chaosX);
+                        const chaosFactorY = map(distanceFromYCenter, 400, -400, 10, chaosY);
+                        
+                        px = px - chaosFactorX * Math.sin(py / rand1);
+                        py = py - chaosFactorY * Math.sin(px / rand2);
+                        
+                        points.push(`${px},${py}`);
+                    });
+                    
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', `M ${points.join(' L ')} Z`);
+                    path.setAttribute('fill', shape.getAttribute('fill') || 'none');
+                    path.setAttribute('stroke', shape.getAttribute('stroke') || 'none');
+                    path.setAttribute('stroke-width', shape.getAttribute('stroke-width') || '1');
+                    path.setAttribute('opacity', shape.getAttribute('opacity') || '1');
+                    path.setAttribute('stroke-linecap', shape.getAttribute('stroke-linecap') || 'butt');
+                    
+                    shape.parentNode.replaceChild(path, shape);
+                }
+                else if (tagName === 'path') {
+                    const d = shape.getAttribute('d');
+                    if (!d) return;
+                    
+                    // Parse path e aplica distorção
+                    const newD = transformPathData(d, chaosX, chaosY, rand1, rand2);
+                    shape.setAttribute('d', newD);
+                }
+            });
+        }
+
+        function transformPathData(d, chaosX, chaosY, rand1, rand2) {
+            // Parse comandos SVG path
+            const commands = d.match(/[MLHVCSQTAZ][^MLHVCSQTAZ]*/gi);
+            if (!commands) return d;
+            
+            let newPath = '';
+            
+            commands.forEach(cmd => {
+                const type = cmd[0];
+                const coords = cmd.slice(1).trim().split(/[\s,]+/).filter(c => c).map(parseFloat);
+                
+                if (type === 'M' || type === 'L') {
+                    if (coords.length >= 2) {
+                        let x = coords[0];
+                        let y = coords[1];
+                        
+                        const distanceFromYCenter = height / 2 - y;
+                        const distanceFromXCenter = width / 2 - x;
+                        const chaosFactorX = map(distanceFromXCenter, 400, -400, 1, chaosX);
+                        const chaosFactorY = map(distanceFromYCenter, 400, -400, 10, chaosY);
+                        
+                        x = x - chaosFactorX * Math.sin(y / rand1);
+                        y = y - chaosFactorY * Math.sin(x / rand2);
+                        
+                        newPath += `${type}${x},${y} `;
+                    }
+                } else if (type === 'Z') {
+                    newPath += 'Z ';
+                } else {
+                    newPath += cmd + ' ';
+                }
+            });
+            
+            return newPath.trim();
+        }
+
+        function initSVG() {
+            const wrapper = document.getElementById('canvas-wrapper');
+            wrapper.innerHTML = '';
+            
+            svg = SVG()
+                .viewbox(0, 0, width, height)
+                .addTo('#canvas-wrapper')
+                .attr('id', 'chaos-svg');
+        }
+
+        function generate() {
+            const selectedShape = document.getElementById('shape').value;
+            const frequency = parseInt(document.getElementById('frequency').value);
+            const scaleConstant = parseInt(document.getElementById('scale').value);
+            const chaosY = parseFloat(document.getElementById('chaosY').value);
+            const chaosX = parseFloat(document.getElementById('chaosX').value);
+            const maxRotate = parseInt(document.getElementById('rotate').value);
+            const strokeWidth = parseFloat(document.getElementById('stroke').value);
+            const color1 = document.getElementById('color1').value;
+            const color2 = document.getElementById('color2').value;
+
+            initSVG();
+
+            // Não criar gradiente - cada camada terá cor própria
+            
+            const shapeGroup = svg.group()
+                .attr('stroke-linecap', 'round');
+
+            let previousClipId = null;
+
+            // Gerar camadas - da maior (borda) para menor (centro)
+            for (let i = frequency; i >= 2; i--) {
+                const rotateFactor = map(i, frequency, 1, 0, maxRotate);
+                const t = map(i, frequency, 2, 0, 1);
+                const layerColor = interpolateColor(color1, color2, t);
+                
+                const clipId = `clip-${i}`;
+                
+                // Criar forma para esta camada
+                let shape;
+                if (selectedShape === 'circle') {
+                    shape = svg.circle(i * scaleConstant);
+                } else if (selectedShape === 'square') {
+                    shape = svg.rect(i * scaleConstant, i * scaleConstant);
+                } else if (selectedShape === 'hexagon') {
+                    shape = svg.path(hexagonPath).size(i * scaleConstant);
+                } else if (selectedShape === 'triangle') {
+                    shape = svg.path(roundedTrianglePath).size(i * scaleConstant);
+                }
+
+                shape
+                    .cx(width / 2)
+                    .cy(height / 2)
+                    .attr('transform', `rotate(${rotateFactor}, ${width / 2}, ${height / 2})`)
+                    .attr('stroke', layerColor)
+                    .attr('stroke-width', strokeWidth)
+                    .attr('fill', layerColor)
+                    .attr('stroke-linecap', 'round');
+
+                // Aplicar clip da camada anterior (se existir)
+                if (previousClipId) {
+                    shape.attr('clip-path', `url(#${previousClipId})`);
+                }
+
+                // Criar clip-path para próxima camada
+                const clipPath = svg.defs().clip().attr('id', clipId);
+                let clipShape;
+                if (selectedShape === 'circle') {
+                    clipShape = clipPath.circle(i * scaleConstant);
+                } else if (selectedShape === 'square') {
+                    clipShape = clipPath.rect(i * scaleConstant, i * scaleConstant);
+                } else if (selectedShape === 'hexagon') {
+                    clipShape = clipPath.path(hexagonPath).size(i * scaleConstant);
+                } else if (selectedShape === 'triangle') {
+                    clipShape = clipPath.path(roundedTrianglePath).size(i * scaleConstant);
+                }
+                clipShape
+                    .cx(width / 2)
+                    .cy(height / 2)
+                    .attr('transform', `rotate(${rotateFactor}, ${width / 2}, ${height / 2})`);
+
+                previousClipId = clipId;
+            }
+
+            // Aplicar distorção senoidal
+            const svgEl = document.getElementById('chaos-svg');
+            applyWarpDistortion(svgEl, chaosX, chaosY);
+        }
+
+        function randomize() {
+            document.getElementById('shape').value = ['circle', 'square', 'triangle', 'hexagon'][random(0, 4)];
+            document.getElementById('frequency').value = random(15, 35);
+            document.getElementById('scale').value = random(15, 35);
+            document.getElementById('chaosY').value = random(20, 80);
+            document.getElementById('chaosX').value = random(20, 80);
+            document.getElementById('rotate').value = random(50, 150);
+            document.getElementById('stroke').value = random(1, 4);
+
+            const hue1 = random(0, 360);
+            const hue2 = (hue1 + random(60, 180)) % 360;
+            document.getElementById('color1').value = hslToHex(hue1, 70, 60);
+            document.getElementById('color2').value = hslToHex(hue2, 70, 60);
+
+            updateValues();
+            generate();
+        }
+
+        function hslToHex(h, s, l) {
+            l /= 100;
+            const a = s * Math.min(l, 1 - l) / 100;
+            const f = n => {
+                const k = (n + h / 30) % 12;
+                const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                return Math.round(255 * color).toString(16).padStart(2, '0');
+            };
+            return `#${f(0)}${f(8)}${f(4)}`;
+        }
+
+        function updateValues() {
+            document.getElementById('frequencyValue').textContent = document.getElementById('frequency').value;
+            document.getElementById('scaleValue').textContent = document.getElementById('scale').value;
+            document.getElementById('chaosYValue').textContent = document.getElementById('chaosY').value;
+            document.getElementById('chaosXValue').textContent = document.getElementById('chaosX').value;
+            document.getElementById('rotateValue').textContent = document.getElementById('rotate').value;
+            document.getElementById('strokeValue').textContent = document.getElementById('stroke').value;
+        }
+
+        function downloadSVG() {
+            const svgEl = document.getElementById('chaos-svg');
+            const svgData = new XMLSerializer().serializeToString(svgEl);
+            const blob = new Blob([svgData], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chaos-shape.svg';
+            a.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listeners
+        ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateValues);
+        });
+
+        ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke', 'color1', 'color2'].forEach(id => {
+            document.getElementById(id).addEventListener('input', generate);
+        });
+
+        // Gerar inicial
+        initSVG();
+        generate();
+    </script>
+</body>
+</html>
