@@ -76,6 +76,37 @@
             </div>
 
             <div class="control-group">
+                <label>
+                    <input type="checkbox" id="noiseEnabled" checked>
+                    Ativar Textura de Ruído
+                </label>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Intensidade do Ruído
+                    <span class="value-display" id="noiseIntensityValue">30</span>
+                </label>
+                <input type="range" id="noiseIntensity" min="0" max="100" value="30">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Escala do Ruído
+                    <span class="value-display" id="noiseScaleValue">50</span>
+                </label>
+                <input type="range" id="noiseScale" min="10" max="150" value="50">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Detalhe do Ruído
+                    <span class="value-display" id="noiseOctavesValue">3</span>
+                </label>
+                <input type="range" id="noiseOctaves" min="1" max="6" value="3">
+            </div>
+
+            <div class="control-group">
                 <label>Cor Inicial</label>
                 <input type="color" id="color1" value="#3498db">
             </div>
@@ -104,6 +135,7 @@
     <!-- JavaScript Modules -->
     <script src="js/utils.js"></script>
     <script src="js/warp.js"></script>
+    <script src="js/noise.js"></script>
     <script src="js/shapes.js"></script>
     <script src="js/app.js"></script>
 </body>

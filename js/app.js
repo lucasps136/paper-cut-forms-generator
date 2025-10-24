@@ -17,7 +17,11 @@ function getControlValues() {
         maxRotate: parseInt(document.getElementById('rotate').value),
         strokeWidth: parseFloat(document.getElementById('stroke').value),
         color1: document.getElementById('color1').value,
-        color2: document.getElementById('color2').value
+        color2: document.getElementById('color2').value,
+        noiseEnabled: document.getElementById('noiseEnabled').checked,
+        noiseIntensity: parseInt(document.getElementById('noiseIntensity').value),
+        noiseScale: parseInt(document.getElementById('noiseScale').value),
+        noiseOctaves: parseInt(document.getElementById('noiseOctaves').value)
     };
 }
 
@@ -45,6 +49,12 @@ function randomize() {
     document.getElementById('rotate').value = random(50, 150);
     document.getElementById('stroke').value = random(1, 4);
 
+    // Valores aleatórios para ruído
+    document.getElementById('noiseEnabled').checked = Math.random() > 0.3; // 70% de chance de estar habilitado
+    document.getElementById('noiseIntensity').value = random(20, 60);
+    document.getElementById('noiseScale').value = random(30, 100);
+    document.getElementById('noiseOctaves').value = random(2, 5);
+
     // Cores complementares aleatórias
     const hue1 = random(0, 360);
     const hue2 = (hue1 + random(60, 180)) % 360;
@@ -66,6 +76,9 @@ function updateValues() {
     document.getElementById('chaosXValue').textContent = document.getElementById('chaosX').value;
     document.getElementById('rotateValue').textContent = document.getElementById('rotate').value;
     document.getElementById('strokeValue').textContent = document.getElementById('stroke').value;
+    document.getElementById('noiseIntensityValue').textContent = document.getElementById('noiseIntensity').value;
+    document.getElementById('noiseScaleValue').textContent = document.getElementById('noiseScale').value;
+    document.getElementById('noiseOctavesValue').textContent = document.getElementById('noiseOctaves').value;
 }
 
 /**
@@ -73,12 +86,13 @@ function updateValues() {
  */
 function initEventListeners() {
     // Atualizar valores exibidos quando sliders mudarem
-    ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke'].forEach(id => {
+    ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke', 'noiseIntensity', 'noiseScale', 'noiseOctaves'].forEach(id => {
         document.getElementById(id).addEventListener('input', updateValues);
     });
 
     // Regenerar quando qualquer controle mudar
-    ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke', 'color1', 'color2'].forEach(id => {
+    ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke', 'color1', 'color2',
+     'noiseEnabled', 'noiseIntensity', 'noiseScale', 'noiseOctaves'].forEach(id => {
         document.getElementById(id).addEventListener('input', generate);
     });
 }
