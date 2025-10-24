@@ -69,6 +69,18 @@ function generateShapes(params) {
 
     let previousClipId = null;
 
+    // Criar filtro de ruído único para todas as formas (se habilitado)
+    let noiseFilterId = null;
+    if (noiseEnabled) {
+        noiseFilterId = 'noise-filter';
+        createTextureOverlay(svg, noiseFilterId, {
+            scale: noiseScale,
+            intensity: noiseIntensity,
+            octaves: noiseOctaves,
+            seed: Math.random() * 1000
+        });
+    }
+
     // Gerar camadas - da maior (borda) para menor (centro)
     for (let i = frequency; i >= 2; i--) {
         const rotateFactor = map(i, frequency, 1, 0, maxRotate);
@@ -86,30 +98,12 @@ function generateShapes(params) {
             .attr('transform', `rotate(${rotateFactor}, ${SVG_WIDTH / 2}, ${SVG_HEIGHT / 2})`)
             .attr('stroke', layerColor)
             .attr('stroke-width', strokeWidth)
+            .attr('fill', layerColor)
             .attr('stroke-linecap', 'round');
 
-        // Aplicar cor de fundo e textura de ruído
-        if (noiseEnabled) {
-            const patternId = `noise-pattern-${i}`;
-            const noiseData = createNoisePattern(patternId, layerColor, {
-                scale: noiseScale,
-                intensity: noiseIntensity,
-                octaves: noiseOctaves,
-                seed: i * 123.456
-            });
-
-            // Criar pattern SVG
-            const pattern = svg.defs()
-                .pattern(noiseData.size, noiseData.size)
-                .attr('id', patternId)
-                .attr('patternUnits', 'userSpaceOnUse');
-
-            pattern.image(noiseData.dataUrl)
-                .size(noiseData.size, noiseData.size);
-
-            shape.attr('fill', `url(#${patternId})`);
-        } else {
-            shape.attr('fill', layerColor);
+        // Aplicar filtro de ruído se habilitado
+        if (noiseEnabled && noiseFilterId) {
+            shape.attr('filter', `url(#${noiseFilterId})`);
         }
 
         // Aplicar clip da camada anterior (se existir)
