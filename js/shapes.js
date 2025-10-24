@@ -102,6 +102,9 @@ function generateShapes(params) {
             shape.attr('clip-path', `url(#${previousClipId})`);
         }
 
+        // Adicionar forma ao grupo
+        shapeGroup.add(shape);
+
         // Criar clip-path para próxima camada
         const clipPath = svg.defs().clip().attr('id', clipId);
         const clipShape = createShape(selectedShape, i * scaleConstant);
@@ -110,6 +113,9 @@ function generateShapes(params) {
             .cx(SVG_WIDTH / 2)
             .cy(SVG_HEIGHT / 2)
             .attr('transform', `rotate(${rotateFactor}, ${SVG_WIDTH / 2}, ${SVG_HEIGHT / 2})`);
+
+        // Adicionar forma de clip ao clipPath
+        clipPath.add(clipShape);
 
         previousClipId = clipId;
     }
