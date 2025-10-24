@@ -17,8 +17,8 @@ function applyWarpDistortion(element, chaosX, chaosY) {
     const rand1 = Math.round(random(24, 64));
     const rand2 = Math.round(random(24, 64));
 
-    // Pega todos os elementos com coordenadas
-    const shapes = element.querySelectorAll('circle, rect, path');
+    // Pega todos os elementos com coordenadas, incluindo os dentro de clip-paths
+    const shapes = element.querySelectorAll('circle, rect, path, clipPath circle, clipPath rect, clipPath path');
 
     shapes.forEach(shape => {
         const tagName = shape.tagName.toLowerCase();
