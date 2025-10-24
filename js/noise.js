@@ -30,8 +30,9 @@ function createNoiseFilter(svg, id, options = {}) {
     // Intensidade 0-100 -> escala 0-20
     const displacementScale = (intensity / 100) * 15;
 
-    // Criar o filtro
-    const filter = svg.defs().filter().attr('id', id);
+    // Criar o filtro manualmente
+    const defs = svg.defs();
+    const filter = defs.element('filter').attr('id', id);
 
     // feTurbulence - gera o ruído
     filter.node.innerHTML = `
@@ -84,7 +85,9 @@ function createTextureOverlay(svg, id, options = {}) {
     const minBrightness = 1 - variation;
     const maxBrightness = 1 + variation;
 
-    const filter = svg.defs().filter().attr('id', id);
+    // Criar o elemento filter manualmente usando SVG nativo
+    const defs = svg.defs();
+    const filter = defs.element('filter').attr('id', id);
 
     filter.node.innerHTML = `
         <!-- Gerar ruído fractal -->
