@@ -26,7 +26,8 @@ function getControlValues() {
         shadowOffsetX: parseFloat(document.getElementById('shadowOffsetX').value),
         shadowOffsetY: parseFloat(document.getElementById('shadowOffsetY').value),
         shadowBlur: parseFloat(document.getElementById('shadowBlur').value),
-        shadowSize: parseFloat(document.getElementById('shadowSize').value)
+        shadowSize: parseFloat(document.getElementById('shadowSize').value),
+        shadowColor: document.getElementById('shadowColor').value
     };
 }
 
@@ -66,6 +67,8 @@ function randomize() {
     document.getElementById('shadowOffsetY').value = random(-5, 5) / 2;
     document.getElementById('shadowBlur').value = random(2, 12);
     document.getElementById('shadowSize').value = random(1, 6);
+    const shadowHue = random(0, 360);
+    document.getElementById('shadowColor').value = hslToHex(shadowHue, random(20, 80), random(10, 40));
 
     // Cores complementares aleatórias
     const hue1 = random(0, 360);
@@ -110,7 +113,7 @@ function initEventListeners() {
     // Regenerar quando qualquer controle mudar
     ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke', 'color1', 'color2',
      'noiseEnabled', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
-     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize'].forEach(id => {
+     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'].forEach(id => {
         document.getElementById(id).addEventListener('input', generate);
     });
 }
