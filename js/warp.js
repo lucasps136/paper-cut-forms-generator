@@ -180,8 +180,7 @@ function replaceShapeWithPath(shape, points) {
 
     // Preservar todos os atributos importantes
     const attributesToPreserve = [
-        'fill', 'stroke', 'stroke-width', 'opacity',
-        'stroke-linecap', 'clip-path', 'transform', 'filter'
+        'fill', 'opacity', 'clip-path', 'transform', 'filter'
     ];
 
     attributesToPreserve.forEach(attr => {
@@ -193,9 +192,6 @@ function replaceShapeWithPath(shape, points) {
 
     // Valores padrão para atributos não definidos
     if (!path.getAttribute('fill')) path.setAttribute('fill', 'none');
-    if (!path.getAttribute('stroke')) path.setAttribute('stroke', 'none');
-    if (!path.getAttribute('stroke-width')) path.setAttribute('stroke-width', '1');
-    if (!path.getAttribute('stroke-linecap')) path.setAttribute('stroke-linecap', 'butt');
 
     shape.parentNode.replaceChild(path, shape);
 }

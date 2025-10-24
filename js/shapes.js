@@ -37,7 +37,6 @@ function initSVG() {
  * @param {number} params.chaosY - Intensidade da distorção no eixo Y
  * @param {number} params.chaosX - Intensidade da distorção no eixo X
  * @param {number} params.maxRotate - Rotação máxima em graus
- * @param {number} params.strokeWidth - Espessura das linhas
  * @param {string} params.color1 - Cor inicial em hex
  * @param {string} params.color2 - Cor final em hex
  * @param {boolean} params.noiseEnabled - Se deve aplicar textura de ruído
@@ -59,7 +58,6 @@ function generateShapes(params) {
         chaosY,
         chaosX,
         maxRotate,
-        strokeWidth,
         color1,
         color2,
         noiseEnabled = false,
@@ -76,8 +74,7 @@ function generateShapes(params) {
 
     initSVG();
 
-    const shapeGroup = svg.group()
-        .attr('stroke-linecap', 'round');
+    const shapeGroup = svg.group();
 
     let previousClipId = null;
 
@@ -97,9 +94,8 @@ function generateShapes(params) {
             .cx(SVG_WIDTH / 2)
             .cy(SVG_HEIGHT / 2)
             .attr('transform', `rotate(${rotateFactor}, ${SVG_WIDTH / 2}, ${SVG_HEIGHT / 2})`)
-            .attr('stroke', layerColor)
-            .attr('stroke-width', strokeWidth)
-            .attr('stroke-linecap', 'round');
+            .attr('stroke', 'none')
+            .attr('stroke-width', 0);
 
         // Aplicar cor sólida PRIMEIRO (com ou sem textura de ruído)
         applyColorToShape(shape, layerColor, i, noiseEnabled ? {

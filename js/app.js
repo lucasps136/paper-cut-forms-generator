@@ -15,7 +15,6 @@ function getControlValues() {
         chaosY: parseFloat(document.getElementById('chaosY').value),
         chaosX: parseFloat(document.getElementById('chaosX').value),
         maxRotate: parseInt(document.getElementById('rotate').value),
-        strokeWidth: parseFloat(document.getElementById('stroke').value),
         color1: document.getElementById('color1').value,
         color2: document.getElementById('color2').value,
         noiseEnabled: document.getElementById('noiseEnabled').checked,
@@ -53,7 +52,6 @@ function randomize() {
     document.getElementById('chaosY').value = random(20, 80);
     document.getElementById('chaosX').value = random(20, 80);
     document.getElementById('rotate').value = random(50, 150);
-    document.getElementById('stroke').value = random(1, 4);
 
     // Valores aleatórios para ruído
     document.getElementById('noiseEnabled').checked = Math.random() > 0.3; // 70% de chance de estar habilitado
@@ -90,7 +88,6 @@ function updateValues() {
     document.getElementById('chaosYValue').textContent = document.getElementById('chaosY').value;
     document.getElementById('chaosXValue').textContent = document.getElementById('chaosX').value;
     document.getElementById('rotateValue').textContent = document.getElementById('rotate').value;
-    document.getElementById('strokeValue').textContent = document.getElementById('stroke').value;
     document.getElementById('noiseIntensityValue').textContent = document.getElementById('noiseIntensity').value;
     document.getElementById('noiseScaleValue').textContent = document.getElementById('noiseScale').value;
     document.getElementById('noiseOctavesValue').textContent = document.getElementById('noiseOctaves').value;
@@ -105,13 +102,13 @@ function updateValues() {
  */
 function initEventListeners() {
     // Atualizar valores exibidos quando sliders mudarem
-    ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
+    ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
      'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize'].forEach(id => {
         document.getElementById(id).addEventListener('input', updateValues);
     });
 
     // Regenerar quando qualquer controle mudar
-    ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke', 'color1', 'color2',
+    ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'color1', 'color2',
      'noiseEnabled', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
      'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'].forEach(id => {
         document.getElementById(id).addEventListener('input', generate);
