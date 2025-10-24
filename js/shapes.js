@@ -113,13 +113,16 @@ function generateShapes(params) {
         if (shadowEnabled && shadowBlur > 0) {
             const filterId = `inner-shadow-${i}`;
 
-            // Calcular valores progressivos de blur e offset (metade a valor final)
-            // t vai de 0 a 1, então multiplicamos por 0.5 + t * 0.5 para ir de 0.5x a 1x
-            const shadowProgress = 0.5 + (t * 0.5); // Vai de 0.5 a 1
+            // Calcular valores progressivos de blur e offset
+            // shadowSize controla o multiplicador final (ex: 2 = vai de 0.5x a 2x)
+            const minMultiplier = 0.5;
+            const maxMultiplier = shadowSize;
+            const shadowProgress = minMultiplier + (t * (maxMultiplier - minMultiplier));
+
             const blurAmount = shadowBlur * shadowProgress;
             const offsetXAmount = shadowOffsetX * shadowProgress;
             const offsetYAmount = shadowOffsetY * shadowProgress;
-            const opacityAmount = (shadowSize / 10) * shadowProgress; // Normalizar para 0-1
+            const opacityAmount = 0.7; // Opacidade fixa em 70%
 
             // Criar filtro de inner shadow com valores progressivos
             createInnerShadowFilter(filterId, blurAmount, offsetXAmount, offsetYAmount, opacityAmount, shadowColor);
