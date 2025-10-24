@@ -107,6 +107,45 @@
             </div>
 
             <div class="control-group">
+                <label>
+                    <input type="checkbox" id="shadowEnabled" checked>
+                    Ativar Inner Shadow
+                </label>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Shadow Offset X
+                    <span class="value-display" id="shadowOffsetXValue">1</span>
+                </label>
+                <input type="range" id="shadowOffsetX" min="-10" max="10" step="0.5" value="1">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Shadow Offset Y
+                    <span class="value-display" id="shadowOffsetYValue">1</span>
+                </label>
+                <input type="range" id="shadowOffsetY" min="-10" max="10" step="0.5" value="1">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Blur Final
+                    <span class="value-display" id="shadowBlurValue">4</span>
+                </label>
+                <input type="range" id="shadowBlur" min="0" max="20" step="0.5" value="4">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Tamanho Final da Sombra
+                    <span class="value-display" id="shadowSizeValue">2</span>
+                </label>
+                <input type="range" id="shadowSize" min="0" max="10" step="0.5" value="2">
+            </div>
+
+            <div class="control-group">
                 <label>Cor Inicial</label>
                 <input type="color" id="color1" value="#3498db">
             </div>
@@ -133,10 +172,10 @@
     </div>
 
     <!-- JavaScript Modules -->
-    <script src="js/utils.js?v=3"></script>
-    <script src="js/warp.js?v=3"></script>
-    <script src="js/noise.js?v=3"></script>
-    <script src="js/shapes.js?v=3"></script>
-    <script src="js/app.js?v=3"></script>
+    <script src="js/utils.js?v=4"></script>
+    <script src="js/warp.js?v=4"></script>
+    <script src="js/noise.js?v=4"></script>
+    <script src="js/shapes.js?v=4"></script>
+    <script src="js/app.js?v=4"></script>
 </body>
 </html>

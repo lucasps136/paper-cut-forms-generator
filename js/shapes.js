@@ -44,6 +44,11 @@ function initSVG() {
  * @param {number} params.noiseIntensity - Intensidade do ruído (0-100)
  * @param {number} params.noiseScale - Escala do ruído
  * @param {number} params.noiseOctaves - Número de octaves do ruído
+ * @param {boolean} params.shadowEnabled - Se deve aplicar inner shadow
+ * @param {number} params.shadowOffsetX - Offset X da sombra
+ * @param {number} params.shadowOffsetY - Offset Y da sombra
+ * @param {number} params.shadowBlur - Blur final da sombra
+ * @param {number} params.shadowSize - Tamanho final da sombra
  */
 function generateShapes(params) {
     const {
@@ -59,7 +64,12 @@ function generateShapes(params) {
         noiseEnabled = false,
         noiseIntensity = 30,
         noiseScale = 50,
-        noiseOctaves = 3
+        noiseOctaves = 3,
+        shadowEnabled = false,
+        shadowOffsetX = 1,
+        shadowOffsetY = 1,
+        shadowBlur = 4,
+        shadowSize = 2
     } = params;
 
     initSVG();
@@ -69,26 +79,13 @@ function generateShapes(params) {
 
     let previousClipId = null;
 
-    // Valores iniciais para inner shadow
-    const initialBlur = 2;
-    const initialOffset = 1;
-
     // Gerar camadas - da maior (borda) para menor (centro)
     for (let i = frequency; i >= 2; i--) {
         const rotateFactor = map(i, frequency, 1, 0, maxRotate);
         const t = map(i, frequency, 2, 0, 1);
         const layerColor = interpolateColor(color1, color2, t);
 
-        // Calcular valores progressivos de blur e offset (1x a 2x)
-        const shadowProgress = 1 + t; // Vai de 1 a 2
-        const blurAmount = initialBlur * shadowProgress;
-        const offsetAmount = initialOffset * shadowProgress;
-
         const clipId = `clip-${i}`;
-        const filterId = `inner-shadow-${i}`;
-
-        // Criar filtro de inner shadow com valores progressivos
-        createInnerShadowFilter(filterId, blurAmount, offsetAmount);
 
         // Criar forma para esta camada
         const shape = createShape(selectedShape, i * scaleConstant);
@@ -100,8 +97,25 @@ function generateShapes(params) {
             .attr('transform', `rotate(${rotateFactor}, ${SVG_WIDTH / 2}, ${SVG_HEIGHT / 2})`)
             .attr('stroke', layerColor)
             .attr('stroke-width', strokeWidth)
-            .attr('stroke-linecap', 'round')
-            .attr('filter', `url(#${filterId})`); // Aplicar filtro de inner shadow
+            .attr('stroke-linecap', 'round');
+
+        // Aplicar inner shadow se habilitado
+        if (shadowEnabled) {
+            const filterId = `inner-shadow-${i}`;
+
+            // Calcular valores progressivos de blur e offset (metade a valor final)
+            // t vai de 0 a 1, então multiplicamos por 0.5 + t * 0.5 para ir de 0.5x a 1x
+            const shadowProgress = 0.5 + (t * 0.5); // Vai de 0.5 a 1
+            const blurAmount = shadowBlur * shadowProgress;
+            const offsetXAmount = shadowOffsetX * shadowProgress;
+            const offsetYAmount = shadowOffsetY * shadowProgress;
+            const offsetSize = shadowSize * shadowProgress;
+
+            // Criar filtro de inner shadow com valores progressivos
+            createInnerShadowFilter(filterId, blurAmount, offsetXAmount, offsetYAmount, offsetSize);
+
+            shape.attr('filter', `url(#${filterId})`);
+        }
 
         // Aplicar cor sólida (com ou sem textura de ruído)
         applyColorToShape(shape, layerColor, i, noiseEnabled ? {
@@ -172,15 +186,23 @@ function createShape(shapeType, size) {
  * Cria um filtro de inner shadow progressivo
  * @param {string} filterId - ID único para o filtro
  * @param {number} blurAmount - Quantidade de blur (stdDeviation)
- * @param {number} offsetAmount - Deslocamento da sombra
+ * @param {number} offsetX - Deslocamento horizontal da sombra
+ * @param {number} offsetY - Deslocamento vertical da sombra
+ * @param {number} shadowSize - Intensidade/tamanho da sombra
  * @returns {object} Elemento de filtro SVG
  */
-function createInnerShadowFilter(filterId, blurAmount, offsetAmount) {
-    const filter = svg.defs().element('filter').attr('id', filterId);
+function createInnerShadowFilter(filterId, blurAmount, offsetX, offsetY, shadowSize) {
+    const filter = svg.defs().element('filter')
+        .attr('id', filterId)
+        .attr('x', '-50%')
+        .attr('y', '-50%')
+        .attr('width', '200%')
+        .attr('height', '200%');
 
     // 1. Inverter o alpha da forma (criar máscara invertida)
     filter.element('feFlood')
         .attr('flood-color', '#000000')
+        .attr('flood-opacity', Math.min(shadowSize / 5, 1)) // Opacidade baseada no tamanho
         .attr('result', 'flood');
 
     filter.element('feComposite')
@@ -192,8 +214,8 @@ function createInnerShadowFilter(filterId, blurAmount, offsetAmount) {
     // 2. Aplicar offset na máscara invertida
     filter.element('feOffset')
         .attr('in', 'inverse')
-        .attr('dx', offsetAmount)
-        .attr('dy', offsetAmount)
+        .attr('dx', offsetX)
+        .attr('dy', offsetY)
         .attr('result', 'offset');
 
     // 3. Aplicar blur

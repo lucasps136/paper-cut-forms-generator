@@ -21,7 +21,12 @@ function getControlValues() {
         noiseEnabled: document.getElementById('noiseEnabled').checked,
         noiseIntensity: parseInt(document.getElementById('noiseIntensity').value),
         noiseScale: parseInt(document.getElementById('noiseScale').value),
-        noiseOctaves: parseInt(document.getElementById('noiseOctaves').value)
+        noiseOctaves: parseInt(document.getElementById('noiseOctaves').value),
+        shadowEnabled: document.getElementById('shadowEnabled').checked,
+        shadowOffsetX: parseFloat(document.getElementById('shadowOffsetX').value),
+        shadowOffsetY: parseFloat(document.getElementById('shadowOffsetY').value),
+        shadowBlur: parseFloat(document.getElementById('shadowBlur').value),
+        shadowSize: parseFloat(document.getElementById('shadowSize').value)
     };
 }
 
@@ -55,6 +60,13 @@ function randomize() {
     document.getElementById('noiseScale').value = random(30, 100);
     document.getElementById('noiseOctaves').value = random(2, 5);
 
+    // Valores aleatórios para inner shadow
+    document.getElementById('shadowEnabled').checked = Math.random() > 0.3; // 70% de chance de estar habilitado
+    document.getElementById('shadowOffsetX').value = random(-5, 5) / 2;
+    document.getElementById('shadowOffsetY').value = random(-5, 5) / 2;
+    document.getElementById('shadowBlur').value = random(2, 12);
+    document.getElementById('shadowSize').value = random(1, 6);
+
     // Cores complementares aleatórias
     const hue1 = random(0, 360);
     const hue2 = (hue1 + random(60, 180)) % 360;
@@ -79,6 +91,10 @@ function updateValues() {
     document.getElementById('noiseIntensityValue').textContent = document.getElementById('noiseIntensity').value;
     document.getElementById('noiseScaleValue').textContent = document.getElementById('noiseScale').value;
     document.getElementById('noiseOctavesValue').textContent = document.getElementById('noiseOctaves').value;
+    document.getElementById('shadowOffsetXValue').textContent = document.getElementById('shadowOffsetX').value;
+    document.getElementById('shadowOffsetYValue').textContent = document.getElementById('shadowOffsetY').value;
+    document.getElementById('shadowBlurValue').textContent = document.getElementById('shadowBlur').value;
+    document.getElementById('shadowSizeValue').textContent = document.getElementById('shadowSize').value;
 }
 
 /**
@@ -86,13 +102,15 @@ function updateValues() {
  */
 function initEventListeners() {
     // Atualizar valores exibidos quando sliders mudarem
-    ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke', 'noiseIntensity', 'noiseScale', 'noiseOctaves'].forEach(id => {
+    ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
+     'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize'].forEach(id => {
         document.getElementById(id).addEventListener('input', updateValues);
     });
 
     // Regenerar quando qualquer controle mudar
     ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'stroke', 'color1', 'color2',
-     'noiseEnabled', 'noiseIntensity', 'noiseScale', 'noiseOctaves'].forEach(id => {
+     'noiseEnabled', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
+     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize'].forEach(id => {
         document.getElementById(id).addEventListener('input', generate);
     });
 }
