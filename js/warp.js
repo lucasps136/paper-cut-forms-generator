@@ -177,11 +177,25 @@ function transformPathData(d, chaosX, chaosY, rand1, rand2) {
 function replaceShapeWithPath(shape, points) {
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', `M ${points.join(' L ')} Z`);
-    path.setAttribute('fill', shape.getAttribute('fill') || 'none');
-    path.setAttribute('stroke', shape.getAttribute('stroke') || 'none');
-    path.setAttribute('stroke-width', shape.getAttribute('stroke-width') || '1');
-    path.setAttribute('opacity', shape.getAttribute('opacity') || '1');
-    path.setAttribute('stroke-linecap', shape.getAttribute('stroke-linecap') || 'butt');
+
+    // Preservar todos os atributos importantes
+    const attributesToPreserve = [
+        'fill', 'stroke', 'stroke-width', 'opacity',
+        'stroke-linecap', 'clip-path', 'transform'
+    ];
+
+    attributesToPreserve.forEach(attr => {
+        const value = shape.getAttribute(attr);
+        if (value) {
+            path.setAttribute(attr, value);
+        }
+    });
+
+    // Valores padrão para atributos não definidos
+    if (!path.getAttribute('fill')) path.setAttribute('fill', 'none');
+    if (!path.getAttribute('stroke')) path.setAttribute('stroke', 'none');
+    if (!path.getAttribute('stroke-width')) path.setAttribute('stroke-width', '1');
+    if (!path.getAttribute('stroke-linecap')) path.setAttribute('stroke-linecap', 'butt');
 
     shape.parentNode.replaceChild(path, shape);
 }

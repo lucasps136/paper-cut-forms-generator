@@ -80,6 +80,7 @@ function generateShapes(params) {
         // Criar forma para esta camada
         const shape = createShape(selectedShape, i * scaleConstant);
 
+        // Configurar posição e transformação
         shape
             .cx(SVG_WIDTH / 2)
             .cy(SVG_HEIGHT / 2)
@@ -88,29 +89,13 @@ function generateShapes(params) {
             .attr('stroke-width', strokeWidth)
             .attr('stroke-linecap', 'round');
 
-        // Aplicar cor de fundo e textura de ruído
-        if (noiseEnabled) {
-            const patternId = `noise-pattern-${i}`;
-            const noiseData = createNoisePattern(patternId, layerColor, {
-                scale: noiseScale,
-                intensity: noiseIntensity,
-                octaves: noiseOctaves,
-                seed: i * 123.456
-            });
-
-            // Criar pattern SVG
-            const pattern = svg.defs()
-                .pattern(noiseData.size, noiseData.size)
-                .attr('id', patternId)
-                .attr('patternUnits', 'userSpaceOnUse');
-
-            pattern.image(noiseData.dataUrl)
-                .size(noiseData.size, noiseData.size);
-
-            shape.attr('fill', `url(#${patternId})`);
-        } else {
-            shape.attr('fill', layerColor);
-        }
+        // Aplicar cor sólida (com ou sem textura de ruído)
+        applyColorToShape(shape, layerColor, i, noiseEnabled ? {
+            enabled: true,
+            scale: noiseScale,
+            intensity: noiseIntensity,
+            octaves: noiseOctaves
+        } : null);
 
         // Aplicar clip da camada anterior (se existir)
         if (previousClipId) {
@@ -158,6 +143,48 @@ function createShape(shapeType, size) {
             break;
         default:
             shape = svg.circle(size);
+    }
+
+    return shape;
+}
+
+/**
+ * Aplica cor sólida com textura de ruído opcional a uma forma
+ * @param {object} shape - Elemento SVG da forma
+ * @param {string} color - Cor base em formato hex
+ * @param {number} layerIndex - Índice da camada (para seed único)
+ * @param {object} noiseOptions - Opções de ruído
+ * @returns {object} Forma com cor aplicada
+ */
+function applyColorToShape(shape, color, layerIndex, noiseOptions = null) {
+    if (noiseOptions && noiseOptions.enabled) {
+        const patternId = `noise-pattern-${layerIndex}`;
+        const noiseData = createNoisePattern(patternId, color, {
+            scale: noiseOptions.scale,
+            intensity: noiseOptions.intensity,
+            octaves: noiseOptions.octaves,
+            seed: layerIndex * 123.456
+        });
+
+        // Criar pattern SVG com configuração correta
+        const pattern = svg.defs()
+            .pattern(noiseData.size, noiseData.size)
+            .attr('id', patternId)
+            .attr('patternUnits', 'userSpaceOnUse')
+            .attr('patternContentUnits', 'userSpaceOnUse')
+            .attr('x', 0)
+            .attr('y', 0);
+
+        pattern.image(noiseData.dataUrl)
+            .size(noiseData.size, noiseData.size)
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('preserveAspectRatio', 'none');
+
+        shape.attr('fill', `url(#${patternId})`);
+    } else {
+        // Cor sólida sem ruído
+        shape.attr('fill', color);
     }
 
     return shape;
