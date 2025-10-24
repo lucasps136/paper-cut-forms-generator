@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador Chaos - Distorção Senoidal</title>
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.1.2/dist/svg.min.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Painel de Controles -->
+        <div class="controls">
+            <h2>Controles</h2>
+
+            <div class="control-group">
+                <label>Forma</label>
+                <select id="shape">
+                    <option value="circle">Círculo</option>
+                    <option value="square">Quadrado</option>
+                    <option value="triangle">Triângulo</option>
+                    <option value="hexagon" selected>Hexágono</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Camadas
+                    <span class="value-display" id="frequencyValue">26</span>
+                </label>
+                <input type="range" id="frequency" min="10" max="40" value="26">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Escala
+                    <span class="value-display" id="scaleValue">22</span>
+                </label>
+                <input type="range" id="scale" min="10" max="40" value="22">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Chaos Y
+                    <span class="value-display" id="chaosYValue">40</span>
+                </label>
+                <input type="range" id="chaosY" min="0" max="100" value="40">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Chaos X
+                    <span class="value-display" id="chaosXValue">44</span>
+                </label>
+                <input type="range" id="chaosX" min="0" max="100" value="44">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Rotação Máxima
+                    <span class="value-display" id="rotateValue">101</span>
+                </label>
+                <input type="range" id="rotate" min="0" max="180" value="101">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Espessura
+                    <span class="value-display" id="strokeValue">2</span>
+                </label>
+                <input type="range" id="stroke" min="1" max="5" value="2">
+            </div>
+
+            <div class="control-group">
+                <label>Cor Inicial</label>
+                <input type="color" id="color1" value="#3498db">
+            </div>
+
+            <div class="control-group">
+                <label>Cor Final</label>
+                <input type="color" id="color2" value="#e74c3c">
+            </div>
+
+            <div class="button-group">
+                <button onclick="generate()">Gerar</button>
+                <button onclick="randomize()">Aleatório</button>
+            </div>
+
+            <div class="button-group">
+                <button onclick="downloadSVG()">Download SVG</button>
+            </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="canvas-container">
+            <div id="canvas-wrapper"></div>
+        </div>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="js/utils.js"></script>
+    <script src="js/warp.js"></script>
+    <script src="js/shapes.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
