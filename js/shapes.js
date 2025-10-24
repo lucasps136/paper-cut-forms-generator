@@ -64,9 +64,6 @@ function generateShapes(params) {
 
     initSVG();
 
-    const shapeGroup = svg.group()
-        .attr('stroke-linecap', 'round');
-
     let previousClipId = null;
 
     // Criar filtro de ruído único para todas as formas (se habilitado)
@@ -111,14 +108,16 @@ function generateShapes(params) {
             shape.attr('clip-path', `url(#${previousClipId})`);
         }
 
-        // Criar clip-path para próxima camada
-        const clipPath = svg.defs().clip().attr('id', clipId);
+        // Criar clip-path para próxima camada usando element() ao invés de clip()
+        const clipPath = svg.defs().element('clipPath').attr('id', clipId);
         const clipShape = createShape(selectedShape, i * scaleConstant);
 
+        // Adicionar a forma de clip ao clipPath
         clipShape
             .cx(SVG_WIDTH / 2)
             .cy(SVG_HEIGHT / 2)
-            .attr('transform', `rotate(${rotateFactor}, ${SVG_WIDTH / 2}, ${SVG_HEIGHT / 2})`);
+            .attr('transform', `rotate(${rotateFactor}, ${SVG_WIDTH / 2}, ${SVG_HEIGHT / 2})`)
+            .addTo(clipPath);
 
         previousClipId = clipId;
     }

@@ -4,7 +4,7 @@
  */
 
 /**
- * Cria um filtro de textura simples que adiciona ruído mantendo as cores
+ * Cria um filtro de textura que adiciona variação de luminosidade mantendo as cores
  * @param {object} svg - Objeto SVG.js
  * @param {string} id - ID único para o filtro
  * @param {object} options - Opções do filtro
@@ -22,33 +22,52 @@ function createTextureOverlay(svg, id, options = {}) {
         seed = 0
     } = options;
 
-    const baseFrequency = 0.8 / (scale / 10);
+    const baseFrequency = 0.6 / (scale / 10);
 
     // Criar o filtro manualmente
     const defs = svg.defs();
     const filter = defs.element('filter').attr('id', id);
 
-    // Calcular opacidade baseada na intensidade (quanto maior, mais visível a textura)
-    const textureOpacity = intensity / 100;
+    // Calcular fator de intensidade (0-100 → 0.0-0.5)
+    const intensityFactor = intensity / 200;
 
     filter.node.innerHTML = `
+        <!-- Gerar ruído fractal -->
         <feTurbulence
             type="fractalNoise"
             baseFrequency="${baseFrequency}"
             numOctaves="${octaves}"
             seed="${seed}"
             result="turbulence"/>
+
+        <!-- Converter turbulência para escala de cinza -->
         <feColorMatrix
             in="turbulence"
-            type="luminanceToAlpha"
-            result="alpha"/>
-        <feComponentTransfer in="alpha" result="texture">
-            <feFuncA type="table" tableValues="0 ${textureOpacity}"/>
+            type="matrix"
+            values="1 0 0 0 0
+                    1 0 0 0 0
+                    1 0 0 0 0
+                    0 0 0 1 0"
+            result="grayscale"/>
+
+        <!-- Ajustar brilho do ruído para criar variação sutil -->
+        <feComponentTransfer in="grayscale" result="adjustedNoise">
+            <feFuncR type="linear" slope="1" intercept="${-0.5 + intensityFactor}"/>
+            <feFuncG type="linear" slope="1" intercept="${-0.5 + intensityFactor}"/>
+            <feFuncB type="linear" slope="1" intercept="${-0.5 + intensityFactor}"/>
         </feComponentTransfer>
-        <feBlend
+
+        <!-- Aplicar o ruído à imagem original usando aritmética -->
+        <!-- k2 = imagem original, k3 = ruído, resultado = cor * (1 + ruído) -->
+        <feComposite
             in="SourceGraphic"
-            in2="texture"
-            mode="overlay"/>
+            in2="adjustedNoise"
+            operator="arithmetic"
+            k1="0"
+            k2="1"
+            k3="${intensityFactor * 2}"
+            k4="0"
+            result="textured"/>
     `;
 
     return filter;
