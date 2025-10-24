@@ -37,13 +37,18 @@ function initSVG() {
  * @param {number} params.chaosY - Intensidade da distorção no eixo Y
  * @param {number} params.chaosX - Intensidade da distorção no eixo X
  * @param {number} params.maxRotate - Rotação máxima em graus
- * @param {number} params.strokeWidth - Espessura das linhas
  * @param {string} params.color1 - Cor inicial em hex
  * @param {string} params.color2 - Cor final em hex
  * @param {boolean} params.noiseEnabled - Se deve aplicar textura de ruído
  * @param {number} params.noiseIntensity - Intensidade do ruído (0-100)
  * @param {number} params.noiseScale - Escala do ruído
  * @param {number} params.noiseOctaves - Número de octaves do ruído
+ * @param {boolean} params.shadowEnabled - Se deve aplicar inner shadow
+ * @param {number} params.shadowOffsetX - Offset X da sombra
+ * @param {number} params.shadowOffsetY - Offset Y da sombra
+ * @param {number} params.shadowBlur - Blur final da sombra
+ * @param {number} params.shadowSize - Tamanho final da sombra
+ * @param {string} params.shadowColor - Cor da sombra em hex
  */
 function generateShapes(params) {
     const {
@@ -53,19 +58,23 @@ function generateShapes(params) {
         chaosY,
         chaosX,
         maxRotate,
-        strokeWidth,
         color1,
         color2,
         noiseEnabled = false,
         noiseIntensity = 30,
         noiseScale = 50,
-        noiseOctaves = 3
+        noiseOctaves = 3,
+        shadowEnabled = false,
+        shadowOffsetX = 1,
+        shadowOffsetY = 1,
+        shadowBlur = 4,
+        shadowSize = 2,
+        shadowColor = '#000000'
     } = params;
 
     initSVG();
 
-    const shapeGroup = svg.group()
-        .attr('stroke-linecap', 'round');
+    const shapeGroup = svg.group();
 
     let previousClipId = null;
 
@@ -85,17 +94,38 @@ function generateShapes(params) {
             .cx(SVG_WIDTH / 2)
             .cy(SVG_HEIGHT / 2)
             .attr('transform', `rotate(${rotateFactor}, ${SVG_WIDTH / 2}, ${SVG_HEIGHT / 2})`)
-            .attr('stroke', layerColor)
-            .attr('stroke-width', strokeWidth)
-            .attr('stroke-linecap', 'round');
+            .attr('stroke', 'none')
+            .attr('stroke-width', 0);
 
-        // Aplicar cor sólida (com ou sem textura de ruído)
+        // Aplicar cor sólida PRIMEIRO (com ou sem textura de ruído)
         applyColorToShape(shape, layerColor, i, noiseEnabled ? {
             enabled: true,
             scale: noiseScale,
             intensity: noiseIntensity,
             octaves: noiseOctaves
         } : null);
+
+        // Aplicar inner shadow DEPOIS do fill
+        if (shadowEnabled && shadowBlur > 0) {
+            const filterId = `inner-shadow-${i}`;
+
+            // Calcular valores progressivos de blur e offset
+            // shadowSize controla o multiplicador final (ex: 2 = vai de 0.5x a 2x)
+            const minMultiplier = 0.5;
+            const maxMultiplier = shadowSize;
+            const shadowProgress = minMultiplier + (t * (maxMultiplier - minMultiplier));
+
+            const blurAmount = shadowBlur * shadowProgress;
+            const offsetXAmount = shadowOffsetX * shadowProgress;
+            const offsetYAmount = shadowOffsetY * shadowProgress;
+            const opacityAmount = 0.7; // Opacidade fixa em 70%
+
+            // Criar filtro de inner shadow com valores progressivos
+            createInnerShadowFilter(filterId, blurAmount, offsetXAmount, offsetYAmount, opacityAmount, shadowColor);
+
+            // Aplicar filtro à forma
+            shape.attr('filter', `url(#${filterId})`);
+        }
 
         // Aplicar clip da camada anterior (se existir)
         if (previousClipId) {
@@ -152,6 +182,80 @@ function createShape(shapeType, size) {
     }
 
     return shape;
+}
+
+/**
+ * Cria um filtro de inner shadow progressivo
+ * @param {string} filterId - ID único para o filtro
+ * @param {number} blurAmount - Quantidade de blur (stdDeviation)
+ * @param {number} offsetX - Deslocamento horizontal da sombra
+ * @param {number} offsetY - Deslocamento vertical da sombra
+ * @param {number} opacity - Opacidade da sombra (0-1)
+ * @param {string} color - Cor da sombra em hex
+ * @returns {object} Elemento de filtro SVG
+ */
+function createInnerShadowFilter(filterId, blurAmount, offsetX, offsetY, opacity, color) {
+    // Verificar se o filtro já existe e removê-lo
+    const existingFilter = svg.defs().findOne(`#${filterId}`);
+    if (existingFilter) {
+        existingFilter.remove();
+    }
+
+    const filter = svg.defs().element('filter');
+    filter.attr({
+        id: filterId,
+        x: '-50%',
+        y: '-50%',
+        width: '200%',
+        height: '200%'
+    });
+
+    // Passo 1: Criar flood com a cor da sombra
+    filter.element('feFlood').attr({
+        'flood-color': color,
+        'flood-opacity': opacity,
+        result: 'shadowColor'
+    });
+
+    // Passo 2: Usar SourceAlpha (apenas a forma, sem cores) como máscara INVERTIDA
+    // Isso cria a área FORA da forma
+    filter.element('feComposite').attr({
+        in: 'shadowColor',
+        in2: 'SourceAlpha',
+        operator: 'out',
+        result: 'inverse'
+    });
+
+    // Passo 3: Aplicar offset (move a sombra)
+    filter.element('feOffset').attr({
+        in: 'inverse',
+        dx: offsetX,
+        dy: offsetY,
+        result: 'offsetShadow'
+    });
+
+    // Passo 4: Aplicar blur
+    filter.element('feGaussianBlur').attr({
+        in: 'offsetShadow',
+        stdDeviation: blurAmount,
+        result: 'blurredShadow'
+    });
+
+    // Passo 5: Recortar a sombra para ficar DENTRO da forma original usando SourceAlpha
+    filter.element('feComposite').attr({
+        in: 'blurredShadow',
+        in2: 'SourceAlpha',
+        operator: 'in',
+        result: 'innerShadow'
+    });
+
+    // Passo 6: Combinar a sombra com a forma original
+    // A ordem importa: primeiro SourceGraphic (forma com cor), depois innerShadow (sombra por cima)
+    const merge = filter.element('feMerge');
+    merge.element('feMergeNode').attr({in: 'SourceGraphic'});
+    merge.element('feMergeNode').attr({in: 'innerShadow'});
+
+    return filter;
 }
 
 /**

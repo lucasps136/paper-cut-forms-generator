@@ -32,7 +32,7 @@
                     Camadas
                     <span class="value-display" id="frequencyValue">26</span>
                 </label>
-                <input type="range" id="frequency" min="10" max="40" value="26">
+                <input type="range" id="frequency" min="2" max="40" value="26">
             </div>
 
             <div class="control-group">
@@ -40,7 +40,7 @@
                     Escala
                     <span class="value-display" id="scaleValue">22</span>
                 </label>
-                <input type="range" id="scale" min="10" max="40" value="22">
+                <input type="range" id="scale" min="10" max="200" value="22">
             </div>
 
             <div class="control-group">
@@ -65,14 +65,6 @@
                     <span class="value-display" id="rotateValue">101</span>
                 </label>
                 <input type="range" id="rotate" min="0" max="180" value="101">
-            </div>
-
-            <div class="control-group">
-                <label>
-                    Espessura
-                    <span class="value-display" id="strokeValue">2</span>
-                </label>
-                <input type="range" id="stroke" min="1" max="5" value="2">
             </div>
 
             <div class="control-group">
@@ -107,6 +99,50 @@
             </div>
 
             <div class="control-group">
+                <label>
+                    <input type="checkbox" id="shadowEnabled" checked>
+                    Ativar Inner Shadow
+                </label>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Shadow Offset X
+                    <span class="value-display" id="shadowOffsetXValue">1</span>
+                </label>
+                <input type="range" id="shadowOffsetX" min="-10" max="10" step="0.5" value="1">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Shadow Offset Y
+                    <span class="value-display" id="shadowOffsetYValue">1</span>
+                </label>
+                <input type="range" id="shadowOffsetY" min="-10" max="10" step="0.5" value="1">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Blur Final
+                    <span class="value-display" id="shadowBlurValue">4</span>
+                </label>
+                <input type="range" id="shadowBlur" min="0" max="50" step="0.5" value="4">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Multiplicador Final (Tamanho)
+                    <span class="value-display" id="shadowSizeValue">2</span>
+                </label>
+                <input type="range" id="shadowSize" min="1" max="5" step="0.1" value="2">
+            </div>
+
+            <div class="control-group">
+                <label>Cor da Sombra</label>
+                <input type="color" id="shadowColor" value="#000000">
+            </div>
+
+            <div class="control-group">
                 <label>Cor Inicial</label>
                 <input type="color" id="color1" value="#3498db">
             </div>
@@ -133,10 +169,10 @@
     </div>
 
     <!-- JavaScript Modules -->
-    <script src="js/utils.js?v=3"></script>
-    <script src="js/warp.js?v=3"></script>
-    <script src="js/noise.js?v=3"></script>
-    <script src="js/shapes.js?v=3"></script>
-    <script src="js/app.js?v=3"></script>
+    <script src="js/utils.js?v=11"></script>
+    <script src="js/warp.js?v=11"></script>
+    <script src="js/noise.js?v=11"></script>
+    <script src="js/shapes.js?v=11"></script>
+    <script src="js/app.js?v=11"></script>
 </body>
 </html>
