@@ -110,7 +110,7 @@ function generateShapes(params) {
         } : null);
 
         // Aplicar inner shadow DEPOIS do fill
-        if (shadowEnabled) {
+        if (shadowEnabled && shadowBlur > 0) {
             const filterId = `inner-shadow-${i}`;
 
             // Calcular valores progressivos de blur e offset (metade a valor final)
@@ -124,6 +124,7 @@ function generateShapes(params) {
             // Criar filtro de inner shadow com valores progressivos
             createInnerShadowFilter(filterId, blurAmount, offsetXAmount, offsetYAmount, opacityAmount, shadowColor);
 
+            // Aplicar filtro à forma
             shape.attr('filter', `url(#${filterId})`);
         }
 
@@ -195,50 +196,71 @@ function createShape(shapeType, size) {
  * @returns {object} Elemento de filtro SVG
  */
 function createInnerShadowFilter(filterId, blurAmount, offsetX, offsetY, opacity, color) {
-    const filter = svg.defs().element('filter')
-        .attr('id', filterId)
-        .attr('x', '-100%')
-        .attr('y', '-100%')
-        .attr('width', '300%')
-        .attr('height', '300%');
+    // Verificar se o filtro já existe e removê-lo
+    const existingFilter = svg.defs().findOne(`#${filterId}`);
+    if (existingFilter) {
+        existingFilter.remove();
+    }
 
-    // 1. Criar uma cor sólida com a cor da sombra
-    filter.element('feFlood')
-        .attr('flood-color', color)
-        .attr('flood-opacity', opacity)
-        .attr('result', 'flood');
+    const filter = svg.defs().element('filter');
+    filter.attr({
+        id: filterId,
+        x: '-50%',
+        y: '-50%',
+        width: '200%',
+        height: '200%',
+        filterUnits: 'objectBoundingBox'
+    });
 
-    // 2. Usar a forma como máscara (inverter)
-    filter.element('feComposite')
-        .attr('in', 'flood')
-        .attr('in2', 'SourceGraphic')
-        .attr('operator', 'out')
-        .attr('result', 'inverse');
+    // 1. Usar SourceAlpha para criar máscara da forma
+    filter.element('feColorMatrix').attr({
+        in: 'SourceAlpha',
+        type: 'matrix',
+        values: '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0',
+        result: 'shadowAlpha'
+    });
 
-    // 3. Aplicar offset
-    filter.element('feOffset')
-        .attr('in', 'inverse')
-        .attr('dx', offsetX)
-        .attr('dy', offsetY)
-        .attr('result', 'offsetted');
+    // 2. Aplicar offset
+    filter.element('feOffset').attr({
+        in: 'shadowAlpha',
+        dx: offsetX,
+        dy: offsetY,
+        result: 'offsetAlpha'
+    });
 
-    // 4. Aplicar blur
-    filter.element('feGaussianBlur')
-        .attr('in', 'offsetted')
-        .attr('stdDeviation', blurAmount)
-        .attr('result', 'blurred');
+    // 3. Aplicar blur
+    filter.element('feGaussianBlur').attr({
+        in: 'offsetAlpha',
+        stdDeviation: blurAmount,
+        result: 'blurredAlpha'
+    });
 
-    // 5. Recortar a sombra para ficar apenas dentro da forma
-    filter.element('feComposite')
-        .attr('in', 'blurred')
-        .attr('in2', 'SourceGraphic')
-        .attr('operator', 'in')
-        .attr('result', 'innerShadow');
+    // 4. Aplicar cor e opacidade à sombra
+    filter.element('feFlood').attr({
+        'flood-color': color,
+        'flood-opacity': opacity,
+        result: 'shadowColor'
+    });
 
-    // 6. Combinar a sombra com a forma original
-    const feMerge = filter.element('feMerge');
-    feMerge.element('feMergeNode').attr('in', 'SourceGraphic');
-    feMerge.element('feMergeNode').attr('in', 'innerShadow');
+    filter.element('feComposite').attr({
+        in: 'shadowColor',
+        in2: 'blurredAlpha',
+        operator: 'in',
+        result: 'coloredShadow'
+    });
+
+    // 5. Recortar para ficar só dentro da forma original
+    filter.element('feComposite').attr({
+        in: 'coloredShadow',
+        in2: 'SourceAlpha',
+        operator: 'in',
+        result: 'innerShadow'
+    });
+
+    // 6. Combinar com a forma original
+    const merge = filter.element('feMerge');
+    merge.element('feMergeNode').attr({in: 'SourceGraphic'});
+    merge.element('feMergeNode').attr({in: 'innerShadow'});
 
     return filter;
 }

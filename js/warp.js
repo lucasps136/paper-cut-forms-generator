@@ -181,7 +181,7 @@ function replaceShapeWithPath(shape, points) {
     // Preservar todos os atributos importantes
     const attributesToPreserve = [
         'fill', 'stroke', 'stroke-width', 'opacity',
-        'stroke-linecap', 'clip-path', 'transform'
+        'stroke-linecap', 'clip-path', 'transform', 'filter'
     ];
 
     attributesToPreserve.forEach(attr => {
