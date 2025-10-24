@@ -40,6 +40,10 @@ function initSVG() {
  * @param {number} params.strokeWidth - Espessura das linhas
  * @param {string} params.color1 - Cor inicial em hex
  * @param {string} params.color2 - Cor final em hex
+ * @param {boolean} params.noiseEnabled - Se deve aplicar textura de ruído
+ * @param {number} params.noiseIntensity - Intensidade do ruído (0-100)
+ * @param {number} params.noiseScale - Escala do ruído
+ * @param {number} params.noiseOctaves - Número de octaves do ruído
  */
 function generateShapes(params) {
     const {
@@ -51,7 +55,11 @@ function generateShapes(params) {
         maxRotate,
         strokeWidth,
         color1,
-        color2
+        color2,
+        noiseEnabled = false,
+        noiseIntensity = 30,
+        noiseScale = 50,
+        noiseOctaves = 3
     } = params;
 
     initSVG();
@@ -78,8 +86,31 @@ function generateShapes(params) {
             .attr('transform', `rotate(${rotateFactor}, ${SVG_WIDTH / 2}, ${SVG_HEIGHT / 2})`)
             .attr('stroke', layerColor)
             .attr('stroke-width', strokeWidth)
-            .attr('fill', layerColor)
             .attr('stroke-linecap', 'round');
+
+        // Aplicar cor de fundo e textura de ruído
+        if (noiseEnabled) {
+            const patternId = `noise-pattern-${i}`;
+            const noiseData = createNoisePattern(patternId, layerColor, {
+                scale: noiseScale,
+                intensity: noiseIntensity,
+                octaves: noiseOctaves,
+                seed: i * 123.456
+            });
+
+            // Criar pattern SVG
+            const pattern = svg.defs()
+                .pattern(noiseData.size, noiseData.size)
+                .attr('id', patternId)
+                .attr('patternUnits', 'userSpaceOnUse');
+
+            pattern.image(noiseData.dataUrl)
+                .size(noiseData.size, noiseData.size);
+
+            shape.attr('fill', `url(#${patternId})`);
+        } else {
+            shape.attr('fill', layerColor);
+        }
 
         // Aplicar clip da camada anterior (se existir)
         if (previousClipId) {
