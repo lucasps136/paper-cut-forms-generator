@@ -65,8 +65,8 @@ function randomize() {
     document.getElementById('shadowEnabled').checked = Math.random() > 0.3; // 70% de chance de estar habilitado
     document.getElementById('shadowOffsetX').value = random(-5, 5) / 2;
     document.getElementById('shadowOffsetY').value = random(-5, 5) / 2;
-    document.getElementById('shadowBlur').value = random(2, 12);
-    document.getElementById('shadowSize').value = random(1, 6);
+    document.getElementById('shadowBlur').value = random(5, 30);
+    document.getElementById('shadowSize').value = random(2, 20);
     const shadowHue = random(0, 360);
     document.getElementById('shadowColor').value = hslToHex(shadowHue, random(20, 80), random(10, 40));
 
