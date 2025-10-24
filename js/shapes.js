@@ -208,56 +208,50 @@ function createInnerShadowFilter(filterId, blurAmount, offsetX, offsetY, opacity
         x: '-50%',
         y: '-50%',
         width: '200%',
-        height: '200%',
-        filterUnits: 'objectBoundingBox'
+        height: '200%'
     });
 
-    // 1. Usar SourceAlpha para criar máscara da forma
-    filter.element('feColorMatrix').attr({
-        in: 'SourceAlpha',
-        type: 'matrix',
-        values: '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0',
-        result: 'shadowAlpha'
-    });
-
-    // 2. Aplicar offset
-    filter.element('feOffset').attr({
-        in: 'shadowAlpha',
-        dx: offsetX,
-        dy: offsetY,
-        result: 'offsetAlpha'
-    });
-
-    // 3. Aplicar blur
-    filter.element('feGaussianBlur').attr({
-        in: 'offsetAlpha',
-        stdDeviation: blurAmount,
-        result: 'blurredAlpha'
-    });
-
-    // 4. Aplicar cor e opacidade à sombra
+    // Passo 1: Criar flood com a cor da sombra
     filter.element('feFlood').attr({
         'flood-color': color,
         'flood-opacity': opacity,
         result: 'shadowColor'
     });
 
+    // Passo 2: Usar SourceAlpha (apenas a forma, sem cores) como máscara INVERTIDA
+    // Isso cria a área FORA da forma
     filter.element('feComposite').attr({
         in: 'shadowColor',
-        in2: 'blurredAlpha',
-        operator: 'in',
-        result: 'coloredShadow'
+        in2: 'SourceAlpha',
+        operator: 'out',
+        result: 'inverse'
     });
 
-    // 5. Recortar para ficar só dentro da forma original
+    // Passo 3: Aplicar offset (move a sombra)
+    filter.element('feOffset').attr({
+        in: 'inverse',
+        dx: offsetX,
+        dy: offsetY,
+        result: 'offsetShadow'
+    });
+
+    // Passo 4: Aplicar blur
+    filter.element('feGaussianBlur').attr({
+        in: 'offsetShadow',
+        stdDeviation: blurAmount,
+        result: 'blurredShadow'
+    });
+
+    // Passo 5: Recortar a sombra para ficar DENTRO da forma original usando SourceAlpha
     filter.element('feComposite').attr({
-        in: 'coloredShadow',
+        in: 'blurredShadow',
         in2: 'SourceAlpha',
         operator: 'in',
         result: 'innerShadow'
     });
 
-    // 6. Combinar com a forma original
+    // Passo 6: Combinar a sombra com a forma original
+    // A ordem importa: primeiro SourceGraphic (forma com cor), depois innerShadow (sombra por cima)
     const merge = filter.element('feMerge');
     merge.element('feMergeNode').attr({in: 'SourceGraphic'});
     merge.element('feMergeNode').attr({in: 'innerShadow'});
