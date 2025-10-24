@@ -61,7 +61,8 @@ function createNoiseFilter(svg, id, options = {}) {
 }
 
 /**
- * Cria um filtro de textura mais sutil para sobreposição
+ * Cria um filtro de textura que varia a luminosidade baseado em ruído
+ * Mantém a cor base de cada forma e adiciona variação de luz/sombra
  * @param {object} svg - Objeto SVG.js
  * @param {string} id - ID único para o filtro
  * @param {object} options - Opções do filtro
@@ -75,35 +76,55 @@ function createTextureOverlay(svg, id, options = {}) {
         seed = 0
     } = options;
 
-    const baseFrequency = 0.8 / (scale / 10);
+    const baseFrequency = 1.0 / (scale / 10);
+
+    // Converter intensidade (0-100) para escala de variação (0.8 a 1.2)
+    // Intensidade 0 = sem variação, Intensidade 100 = muita variação
+    const variation = 0.2 * (intensity / 100);
+    const minBrightness = 1 - variation;
+    const maxBrightness = 1 + variation;
 
     const filter = svg.defs().filter().attr('id', id);
 
     filter.node.innerHTML = `
+        <!-- Gerar ruído fractal -->
         <feTurbulence
             type="fractalNoise"
             baseFrequency="${baseFrequency}"
             numOctaves="${octaves}"
             seed="${seed}"
             result="turbulence"/>
+
+        <!-- Pegar apenas o canal R do ruído e normalizar -->
         <feColorMatrix
             in="turbulence"
-            type="saturate"
-            values="0"
-            result="grayscale"/>
-        <feComponentTransfer in="grayscale" result="contrast">
-            <feFuncR type="linear" slope="3" intercept="-1"/>
-            <feFuncG type="linear" slope="3" intercept="-1"/>
-            <feFuncB type="linear" slope="3" intercept="-1"/>
+            type="matrix"
+            values="1 0 0 0 0
+                    1 0 0 0 0
+                    1 0 0 0 0
+                    0 0 0 1 0"
+            result="noise"/>
+
+        <!-- Ajustar o range do ruído baseado na intensidade -->
+        <feComponentTransfer in="noise" result="adjustedNoise">
+            <feFuncR type="linear" slope="${intensity / 50}" intercept="${0.5 - intensity / 100}"/>
+            <feFuncG type="linear" slope="${intensity / 50}" intercept="${0.5 - intensity / 100}"/>
+            <feFuncB type="linear" slope="${intensity / 50}" intercept="${0.5 - intensity / 100}"/>
         </feComponentTransfer>
-        <feBlend
-            in="SourceGraphic"
-            in2="contrast"
-            mode="overlay"
-            result="blend"/>
-        <feComponentTransfer in="blend">
-            <feFuncA type="linear" slope="1" intercept="0"/>
-        </feComponentTransfer>
+
+        <!-- Multiplicar a cor original pelo ruído -->
+        <feBlend in="SourceGraphic" in2="adjustedNoise" mode="multiply" result="darkened"/>
+
+        <!-- Adicionar de volta luz para não ficar muito escuro -->
+        <feComposite
+            in="darkened"
+            in2="SourceGraphic"
+            operator="arithmetic"
+            k1="0"
+            k2="0.7"
+            k3="0.3"
+            k4="0"
+            result="final"/>
     `;
 
     return filter;
