@@ -49,7 +49,7 @@ function randomize() {
 
     // Valores aleatórios para sliders
     document.getElementById('frequency').value = random(15, 35);
-    document.getElementById('scale').value = random(15, 35);
+    document.getElementById('scale').value = random(20, 100);
     document.getElementById('chaosY').value = random(20, 80);
     document.getElementById('chaosX').value = random(20, 80);
     document.getElementById('rotate').value = random(50, 150);
