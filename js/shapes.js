@@ -171,12 +171,10 @@ function generateShapes(params) {
             shape.attr('filter', `url(#${filterId})`);
         }
 
-        // NÃO aplicar clip ainda - será aplicado após distorção
-        // Armazenar metadados para aplicar depois
+        // Armazenar metadados para criar clips após distorção
         shapeMetadata.push({
             layer: i,
             clipId: clipId,
-            previousClipId: previousClipId,
             shapeType: selectedShape,
             size: i * scaleConstant,
             rotateFactor: rotateFactor
@@ -184,22 +182,6 @@ function generateShapes(params) {
 
         // Adicionar forma ao grupo
         shapeGroup.add(shape);
-
-        // Criar clip-path para próxima camada com margem de segurança
-        // Reduzir tamanho em ~2% para garantir contenção após distorção
-        const clipPath = svg.defs().clip().attr('id', clipId);
-        const clipPadding = 0.98; // 98% do tamanho original
-        const clipShape = createShape(selectedShape, i * scaleConstant * clipPadding);
-
-        clipShape
-            .cx(SVG_WIDTH / 2)
-            .cy(SVG_HEIGHT / 2)
-            .attr('transform', `rotate(${rotateFactor}, ${SVG_WIDTH / 2}, ${SVG_HEIGHT / 2})`);
-
-        // Adicionar forma de clip ao clipPath
-        clipPath.add(clipShape);
-
-        previousClipId = clipId;
     }
 
     // Aplicar distorção senoidal
@@ -357,67 +339,103 @@ function applyColorToShape(shape, color, layerIndex, noiseOptions = null) {
 
 /**
  * Reaplica os clip-paths após a distorção para garantir contenção
+ * Cria clip-paths baseados nas formas JÁ DISTORCIDAS
  * @param {SVGElement} svgEl - Elemento SVG contendo as formas distorcidas
  * @param {Array} shapeMetadata - Array com metadados das formas
  * @param {number} frequency - Número de camadas (para identificar forma MAIOR)
  */
 function reapplyClipsAfterDistortion(svgEl, shapeMetadata, frequency) {
     // Pegar todas as formas visíveis (não clip-paths) no grupo principal
+    // Após distorção, todas as formas podem ter virado <path>
     const allShapes = Array.from(svgEl.querySelectorAll('g > path, g > circle, g > rect'))
         .filter(shape => !shape.closest('clipPath'));
 
     if (allShapes.length === 0) return;
 
-    // 1. Criar clip-path GLOBAL da forma MAIOR (primeira forma, já distorcida)
-    const largestShape = allShapes[0]; // Primeira forma é a MAIOR (i=frequency)
+    const mainGroup = svgEl.querySelector('g');
+    const defs = svgEl.querySelector('defs');
+    if (!mainGroup || !defs) return;
+
+    // Margem de segurança: clips serão 97% do tamanho da forma (3% menor)
+    const clipScaleFactor = 0.97;
+
+    // 1. Criar clip-path GLOBAL baseado na forma MAIOR (já distorcida)
+    const largestShape = allShapes[0];
     const globalClipId = 'clip-global-largest';
 
-    // Clonar o path da forma MAIOR distorcida para usar como clip global
-    const globalClipPath = svgEl.querySelector('defs').appendChild(
-        document.createElementNS('http://www.w3.org/2000/svg', 'clipPath')
-    );
+    const globalClipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
     globalClipPath.setAttribute('id', globalClipId);
 
-    // Clonar a forma MAIOR (já distorcida) para o clip-path global
-    const clonedLargestShape = largestShape.cloneNode(true);
-    clonedLargestShape.removeAttribute('clip-path'); // Remover qualquer clip existente
-    clonedLargestShape.removeAttribute('filter'); // Remover filtros
-    clonedLargestShape.setAttribute('fill', '#000'); // Cor não importa para clip
-    globalClipPath.appendChild(clonedLargestShape);
+    const clonedLargest = largestShape.cloneNode(true);
+    clonedLargest.removeAttribute('clip-path');
+    clonedLargest.removeAttribute('filter');
+    clonedLargest.removeAttribute('fill');
 
-    // 2. Criar grupo com clip global
-    const mainGroup = svgEl.querySelector('g');
-    if (!mainGroup) return;
+    // Aplicar escala de segurança no clip global
+    const bbox = largestShape.getBBox();
+    const centerX = bbox.x + bbox.width / 2;
+    const centerY = bbox.y + bbox.height / 2;
+    clonedLargest.setAttribute('transform',
+        `translate(${centerX}, ${centerY}) scale(${clipScaleFactor}) translate(${-centerX}, ${-centerY})`
+    );
 
+    globalClipPath.appendChild(clonedLargest);
+    defs.appendChild(globalClipPath);
+
+    // 2. Criar clip-path individual para cada forma baseado na forma ANTERIOR (já distorcida)
+    const clipPaths = {}; // Armazenar clips criados
+
+    for (let i = 0; i < allShapes.length - 1; i++) {
+        const currentShape = allShapes[i]; // Forma que será usada como clip para a próxima
+        const meta = shapeMetadata[i];
+        const clipId = meta.clipId;
+
+        // Criar clip-path baseado na forma atual (distorcida)
+        const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+        clipPath.setAttribute('id', clipId);
+
+        const clonedShape = currentShape.cloneNode(true);
+        clonedShape.removeAttribute('clip-path');
+        clonedShape.removeAttribute('filter');
+        clonedShape.removeAttribute('fill');
+
+        // Aplicar escala de segurança centralizada
+        const shapeBBox = currentShape.getBBox();
+        const shapeCenterX = shapeBBox.x + shapeBBox.width / 2;
+        const shapeCenterY = shapeBBox.y + shapeBBox.height / 2;
+        clonedShape.setAttribute('transform',
+            `translate(${shapeCenterX}, ${shapeCenterY}) scale(${clipScaleFactor}) translate(${-shapeCenterX}, ${-shapeCenterY})`
+        );
+
+        clipPath.appendChild(clonedShape);
+        defs.appendChild(clipPath);
+        clipPaths[clipId] = clipPath;
+    }
+
+    // 3. Criar estrutura de grupos aninhados
     const globalClipGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     globalClipGroup.setAttribute('clip-path', `url(#${globalClipId})`);
 
-    // 3. Para cada forma (exceto a MAIOR), criar grupo individual com clip e mover para grupo global
-    shapeMetadata.forEach((meta, index) => {
-        const shape = allShapes[index];
-        if (!shape) return;
+    // 4. Para cada forma (exceto a MAIOR), criar grupo individual com clip
+    for (let i = 1; i < allShapes.length; i++) {
+        const shape = allShapes[i];
+        const prevMeta = shapeMetadata[i - 1]; // Metadados da forma ANTERIOR (maior que esta)
 
-        // Para a forma MAIOR (primeira), não fazer nada
-        if (index === 0) {
-            return;
-        }
-
-        // Para todas as outras formas: criar grupo individual com clip
-        if (meta.previousClipId && shape.parentNode === mainGroup) {
-            // Criar grupo individual para esta forma
+        if (shape && shape.parentNode === mainGroup) {
+            // Criar grupo individual com clip da forma anterior
             const individualGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            individualGroup.setAttribute('clip-path', `url(#${meta.previousClipId})`);
+            individualGroup.setAttribute('clip-path', `url(#${prevMeta.clipId})`);
 
-            // Remover a forma do mainGroup e adicionar ao grupo individual
-            shape.removeAttribute('clip-path'); // Remover clip direto (será aplicado via grupo)
+            // Mover forma para o grupo individual
+            shape.removeAttribute('clip-path');
             individualGroup.appendChild(shape);
 
             // Adicionar grupo individual ao grupo global
             globalClipGroup.appendChild(individualGroup);
         }
-    });
+    }
 
-    // 4. Adicionar o grupo global de volta ao grupo principal
+    // 5. Adicionar grupo global ao mainGroup
     mainGroup.appendChild(globalClipGroup);
 }
 
