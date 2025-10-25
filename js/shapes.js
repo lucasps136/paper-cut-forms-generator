@@ -385,43 +385,39 @@ function reapplyClipsAfterDistortion(svgEl, shapeMetadata, frequency) {
     clonedLargestShape.setAttribute('fill', '#000'); // Cor não importa para clip
     globalClipPath.appendChild(clonedLargestShape);
 
-    // 2. Aplicar clip-path individual E clip global em cada forma
+    // 2. Criar grupo com clip global
+    const mainGroup = svgEl.querySelector('g');
+    if (!mainGroup) return;
+
+    const globalClipGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    globalClipGroup.setAttribute('clip-path', `url(#${globalClipId})`);
+
+    // 3. Para cada forma (exceto a MAIOR), criar grupo individual com clip e mover para grupo global
     shapeMetadata.forEach((meta, index) => {
         const shape = allShapes[index];
         if (!shape) return;
 
-        // Para a forma MAIOR (primeira), não aplicar clip
+        // Para a forma MAIOR (primeira), não fazer nada
         if (index === 0) {
-            // Forma MAIOR não recebe clip (é o limite máximo)
             return;
         }
 
-        // Para todas as outras formas: aplicar clip individual
-        if (meta.previousClipId) {
-            shape.setAttribute('clip-path', `url(#${meta.previousClipId})`);
-        }
+        // Para todas as outras formas: criar grupo individual com clip
+        if (meta.previousClipId && shape.parentNode === mainGroup) {
+            // Criar grupo individual para esta forma
+            const individualGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            individualGroup.setAttribute('clip-path', `url(#${meta.previousClipId})`);
 
-        // 3. Envolver todas as formas menores em um grupo com clip global
-        // Isso será feito depois do loop
+            // Remover a forma do mainGroup e adicionar ao grupo individual
+            shape.removeAttribute('clip-path'); // Remover clip direto (será aplicado via grupo)
+            individualGroup.appendChild(shape);
+
+            // Adicionar grupo individual ao grupo global
+            globalClipGroup.appendChild(individualGroup);
+        }
     });
 
-    // 3. Criar grupo com clip global e mover todas as formas MENORES para dentro
-    const mainGroup = svgEl.querySelector('g');
-    if (!mainGroup) return;
-
-    // Criar novo grupo com clip da forma MAIOR
-    const globalClipGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    globalClipGroup.setAttribute('clip-path', `url(#${globalClipId})`);
-
-    // Mover todas as formas EXCETO a primeira (MAIOR) para o grupo com clip global
-    for (let i = 1; i < allShapes.length; i++) {
-        const shape = allShapes[i];
-        if (shape && shape.parentNode === mainGroup) {
-            globalClipGroup.appendChild(shape);
-        }
-    }
-
-    // Adicionar o grupo com clip global de volta ao grupo principal
+    // 4. Adicionar o grupo global de volta ao grupo principal
     mainGroup.appendChild(globalClipGroup);
 }
 
