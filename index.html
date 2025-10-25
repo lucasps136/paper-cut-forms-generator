@@ -152,6 +152,29 @@
                 <input type="color" id="color2" value="#e74c3c">
             </div>
 
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="gradientEnabled">
+                    Gradientes Distorcidos
+                </label>
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Intensidade do Gradiente
+                    <span class="value-display" id="gradientIntensityValue">50</span>
+                </label>
+                <input type="range" id="gradientIntensity" min="0" max="100" value="50">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Complexidade do Gradiente
+                    <span class="value-display" id="gradientComplexityValue">5</span>
+                </label>
+                <input type="range" id="gradientComplexity" min="3" max="10" value="5">
+            </div>
+
             <div class="button-group">
                 <button onclick="generate()">Gerar</button>
                 <button onclick="randomize()">Aleatório</button>
@@ -172,6 +195,7 @@
     <script src="js/utils.js?v=11"></script>
     <script src="js/warp.js?v=11"></script>
     <script src="js/noise.js?v=11"></script>
+    <script src="js/gradient.js?v=11"></script>
     <script src="js/shapes.js?v=11"></script>
     <script src="js/app.js?v=11"></script>
 </body>

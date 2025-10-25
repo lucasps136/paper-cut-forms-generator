@@ -97,14 +97,16 @@ function initControlsCache() {
         'shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate',
         'color1', 'color2', 'noiseEnabled', 'noiseIntensity',
         'noiseScale', 'noiseOctaves', 'shadowEnabled', 'shadowOffsetX',
-        'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'
+        'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor',
+        'gradientEnabled', 'gradientIntensity', 'gradientComplexity'
     ];
 
     const valueDisplayIds = [
         'frequencyValue', 'scaleValue', 'chaosYValue', 'chaosXValue',
         'rotateValue', 'noiseIntensityValue', 'noiseScaleValue',
         'noiseOctavesValue', 'shadowOffsetXValue', 'shadowOffsetYValue',
-        'shadowBlurValue', 'shadowSizeValue'
+        'shadowBlurValue', 'shadowSizeValue', 'gradientIntensityValue',
+        'gradientComplexityValue'
     ];
 
     controlIds.forEach(id => {
@@ -139,7 +141,10 @@ function getControlValues() {
         shadowOffsetY: parseFloat(controls.shadowOffsetY.value),
         shadowBlur: parseFloat(controls.shadowBlur.value),
         shadowSize: parseFloat(controls.shadowSize.value),
-        shadowColor: controls.shadowColor.value
+        shadowColor: controls.shadowColor.value,
+        gradientEnabled: controls.gradientEnabled.checked,
+        gradientIntensity: parseInt(controls.gradientIntensity.value),
+        gradientComplexity: parseInt(controls.gradientComplexity.value)
     };
 }
 
@@ -208,6 +213,8 @@ function updateValues() {
     controls.shadowOffsetYValue.textContent = controls.shadowOffsetY.value;
     controls.shadowBlurValue.textContent = controls.shadowBlur.value;
     controls.shadowSizeValue.textContent = controls.shadowSize.value;
+    controls.gradientIntensityValue.textContent = controls.gradientIntensity.value;
+    controls.gradientComplexityValue.textContent = controls.gradientComplexity.value;
 }
 
 /**
@@ -216,14 +223,15 @@ function updateValues() {
 function initEventListeners() {
     // Atualizar valores exibidos quando sliders mudarem
     ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
-     'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize'].forEach(id => {
+     'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'gradientIntensity', 'gradientComplexity'].forEach(id => {
         controls[id].addEventListener('input', updateValues);
     });
 
     // Regenerar quando qualquer controle mudar
     ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'color1', 'color2',
      'noiseEnabled', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
-     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'].forEach(id => {
+     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor',
+     'gradientEnabled', 'gradientIntensity', 'gradientComplexity'].forEach(id => {
         controls[id].addEventListener('input', generate);
     });
 }

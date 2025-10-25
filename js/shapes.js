@@ -49,6 +49,9 @@ function initSVG() {
  * @param {number} params.shadowBlur - Blur final da sombra
  * @param {number} params.shadowSize - Tamanho final da sombra
  * @param {string} params.shadowColor - Cor da sombra em hex
+ * @param {boolean} params.gradientEnabled - Se deve usar gradientes distorcidos
+ * @param {number} params.gradientIntensity - Intensidade da distorção do gradiente
+ * @param {number} params.gradientComplexity - Complexidade do gradiente (número de stops)
  */
 function generateShapes(params) {
     const {
@@ -69,7 +72,10 @@ function generateShapes(params) {
         shadowOffsetY = 1,
         shadowBlur = 4,
         shadowSize = 2,
-        shadowColor = '#000000'
+        shadowColor = '#000000',
+        gradientEnabled = false,
+        gradientIntensity = 50,
+        gradientComplexity = 5
     } = params;
 
     initSVG();
@@ -97,13 +103,33 @@ function generateShapes(params) {
             .attr('stroke', 'none')
             .attr('stroke-width', 0);
 
-        // Aplicar cor sólida PRIMEIRO (com ou sem textura de ruído)
-        applyColorToShape(shape, layerColor, i, noiseEnabled ? {
-            enabled: true,
-            scale: noiseScale,
-            intensity: noiseIntensity,
-            octaves: noiseOctaves
-        } : null);
+        // Aplicar cor (sólida, ruído ou gradiente)
+        if (gradientEnabled) {
+            // Usar gradiente distorcido
+            const patternId = `noise-gradient-${i}`;
+            const patternData = createNoiseGradientPattern(
+                patternId,
+                color1,
+                color2,
+                i,
+                {
+                    intensity: gradientIntensity,
+                    scale: noiseScale || 50,
+                    octaves: noiseOctaves || 3,
+                    seed: i * 789.123,
+                    gradientComplexity: gradientComplexity
+                }
+            );
+            applyNoiseGradientPattern(svg, shape, patternId, patternData);
+        } else {
+            // Usar cor sólida (com ou sem textura de ruído)
+            applyColorToShape(shape, layerColor, i, noiseEnabled ? {
+                enabled: true,
+                scale: noiseScale,
+                intensity: noiseIntensity,
+                octaves: noiseOctaves
+            } : null);
+        }
 
         // Aplicar inner shadow DEPOIS do fill
         if (shadowEnabled && shadowBlur > 0) {
