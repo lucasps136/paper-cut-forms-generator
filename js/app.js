@@ -35,7 +35,7 @@ const CONFIG = {
             randomMin: 2,
             randomMax: 5
         },
-        patternSize: 400 // Tamanho do pattern (mesmo valor em noise.js)
+        patternSize: 200 // Tamanho do pattern (mesmo valor em noise.js)
     },
     // Outras configurações de sliders
     frequency: {
@@ -117,45 +117,11 @@ function initControlsCache() {
 }
 
 /**
- * Valida e limita um valor dentro de um range
- * @param {number} value - Valor a validar
- * @param {number} min - Valor mínimo
- * @param {number} max - Valor máximo
- * @returns {number} Valor validado dentro do range
- */
-function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
-}
-
-/**
- * Valida os valores dos controles contra os limites definidos em CONFIG
- * @param {object} values - Valores a validar
- * @returns {object} Valores validados
- */
-function validateControlValues(values) {
-    return {
-        ...values,
-        frequency: clamp(values.frequency, CONFIG.frequency.min, CONFIG.frequency.max),
-        scaleConstant: clamp(values.scaleConstant, CONFIG.scale.min, CONFIG.scale.max),
-        chaosY: clamp(values.chaosY, CONFIG.chaos.min, CONFIG.chaos.max),
-        chaosX: clamp(values.chaosX, CONFIG.chaos.min, CONFIG.chaos.max),
-        maxRotate: clamp(values.maxRotate, CONFIG.rotation.min, CONFIG.rotation.max),
-        noiseIntensity: clamp(values.noiseIntensity, CONFIG.noise.intensity.min, CONFIG.noise.intensity.max),
-        noiseScale: clamp(values.noiseScale, CONFIG.noise.scale.min, CONFIG.noise.scale.max),
-        noiseOctaves: clamp(values.noiseOctaves, CONFIG.noise.octaves.min, CONFIG.noise.octaves.max),
-        shadowOffsetX: clamp(values.shadowOffsetX, CONFIG.shadow.offset.min, CONFIG.shadow.offset.max),
-        shadowOffsetY: clamp(values.shadowOffsetY, CONFIG.shadow.offset.min, CONFIG.shadow.offset.max),
-        shadowBlur: clamp(values.shadowBlur, CONFIG.shadow.blur.min, CONFIG.shadow.blur.max),
-        shadowSize: clamp(values.shadowSize, CONFIG.shadow.size.min, CONFIG.shadow.size.max)
-    };
-}
-
-/**
  * Obtém os valores atuais dos controles
  * @returns {object} Objeto com todos os parâmetros de geração
  */
 function getControlValues() {
-    const values = {
+    return {
         selectedShape: controls.shape.value,
         frequency: parseInt(controls.frequency.value),
         scaleConstant: parseInt(controls.scale.value),
@@ -175,9 +141,6 @@ function getControlValues() {
         shadowSize: parseFloat(controls.shadowSize.value),
         shadowColor: controls.shadowColor.value
     };
-
-    // Validar valores antes de retornar
-    return validateControlValues(values);
 }
 
 /**
