@@ -181,6 +181,22 @@
                 <input type="range" id="gradientIntensity" min="0" max="100" value="50">
             </div>
 
+            <div class="control-group">
+                <label>
+                    Escala do Gradiente
+                    <span class="value-display" id="gradientScaleValue">80</span>
+                </label>
+                <input type="range" id="gradientScale" min="20" max="200" value="80">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Octaves do Gradiente
+                    <span class="value-display" id="gradientOctavesValue">4</span>
+                </label>
+                <input type="range" id="gradientOctaves" min="1" max="6" value="4">
+            </div>
+
             <div class="button-group">
                 <button onclick="generate()">Gerar</button>
                 <button onclick="randomize()">Aleatório</button>
