@@ -61,7 +61,7 @@ function generateShapes(params) {
         color1,
         color2,
         noiseEnabled = false,
-        noiseIntensity = 30,
+        noiseIntensity = 10,
         noiseScale = 50,
         noiseOctaves = 3,
         shadowEnabled = false,

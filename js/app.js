@@ -4,30 +4,180 @@
  */
 
 /**
+ * Configurações centralizadas da aplicação
+ * Define limites, valores padrão e ranges para randomização
+ */
+const CONFIG = {
+    // Limites de rotação
+    rotation: {
+        min: 0,
+        max: 35,
+        randomMin: 5,
+        randomMax: 30
+    },
+    // Configurações de ruído
+    noise: {
+        intensity: {
+            min: 0,
+            max: 20,
+            randomMin: 5,
+            randomMax: 15
+        },
+        scale: {
+            min: 10,
+            max: 150,
+            randomMin: 30,
+            randomMax: 100
+        },
+        octaves: {
+            min: 1,
+            max: 6,
+            randomMin: 2,
+            randomMax: 5
+        },
+        patternSize: 1024 // Tamanho do pattern (mesmo valor em noise.js)
+    },
+    // Outras configurações de sliders
+    frequency: {
+        min: 2,
+        max: 40,
+        randomMin: 15,
+        randomMax: 35
+    },
+    scale: {
+        min: 10,
+        max: 200,
+        randomMin: 20,
+        randomMax: 100
+    },
+    chaos: {
+        min: 0,
+        max: 100,
+        randomMin: 20,
+        randomMax: 80
+    },
+    shadow: {
+        offset: {
+            min: -10,
+            max: 10,
+            randomMin: -2.5,
+            randomMax: 2.5
+        },
+        blur: {
+            min: 0,
+            max: 50,
+            randomMin: 5,
+            randomMax: 30
+        },
+        size: {
+            min: 1,
+            max: 5,
+            randomMin: 1.5,
+            randomMax: 4.0
+        }
+    },
+    // Probabilidades
+    probability: {
+        noiseEnabled: 0.7,  // 70% de chance
+        shadowEnabled: 0.7  // 70% de chance
+    }
+};
+
+/**
+ * Cache de elementos DOM para melhor performance
+ * Evita múltiplas chamadas a document.getElementById()
+ */
+const controls = {};
+
+/**
+ * Inicializa o cache de elementos DOM
+ */
+function initControlsCache() {
+    const controlIds = [
+        'shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate',
+        'color1', 'color2', 'noiseEnabled', 'noiseIntensity',
+        'noiseScale', 'noiseOctaves', 'shadowEnabled', 'shadowOffsetX',
+        'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'
+    ];
+
+    const valueDisplayIds = [
+        'frequencyValue', 'scaleValue', 'chaosYValue', 'chaosXValue',
+        'rotateValue', 'noiseIntensityValue', 'noiseScaleValue',
+        'noiseOctavesValue', 'shadowOffsetXValue', 'shadowOffsetYValue',
+        'shadowBlurValue', 'shadowSizeValue'
+    ];
+
+    controlIds.forEach(id => {
+        controls[id] = document.getElementById(id);
+    });
+
+    valueDisplayIds.forEach(id => {
+        controls[id] = document.getElementById(id);
+    });
+}
+
+/**
+ * Valida e limita um valor dentro de um range
+ * @param {number} value - Valor a validar
+ * @param {number} min - Valor mínimo
+ * @param {number} max - Valor máximo
+ * @returns {number} Valor validado dentro do range
+ */
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Valida os valores dos controles contra os limites definidos em CONFIG
+ * @param {object} values - Valores a validar
+ * @returns {object} Valores validados
+ */
+function validateControlValues(values) {
+    return {
+        ...values,
+        frequency: clamp(values.frequency, CONFIG.frequency.min, CONFIG.frequency.max),
+        scaleConstant: clamp(values.scaleConstant, CONFIG.scale.min, CONFIG.scale.max),
+        chaosY: clamp(values.chaosY, CONFIG.chaos.min, CONFIG.chaos.max),
+        chaosX: clamp(values.chaosX, CONFIG.chaos.min, CONFIG.chaos.max),
+        maxRotate: clamp(values.maxRotate, CONFIG.rotation.min, CONFIG.rotation.max),
+        noiseIntensity: clamp(values.noiseIntensity, CONFIG.noise.intensity.min, CONFIG.noise.intensity.max),
+        noiseScale: clamp(values.noiseScale, CONFIG.noise.scale.min, CONFIG.noise.scale.max),
+        noiseOctaves: clamp(values.noiseOctaves, CONFIG.noise.octaves.min, CONFIG.noise.octaves.max),
+        shadowOffsetX: clamp(values.shadowOffsetX, CONFIG.shadow.offset.min, CONFIG.shadow.offset.max),
+        shadowOffsetY: clamp(values.shadowOffsetY, CONFIG.shadow.offset.min, CONFIG.shadow.offset.max),
+        shadowBlur: clamp(values.shadowBlur, CONFIG.shadow.blur.min, CONFIG.shadow.blur.max),
+        shadowSize: clamp(values.shadowSize, CONFIG.shadow.size.min, CONFIG.shadow.size.max)
+    };
+}
+
+/**
  * Obtém os valores atuais dos controles
  * @returns {object} Objeto com todos os parâmetros de geração
  */
 function getControlValues() {
-    return {
-        selectedShape: document.getElementById('shape').value,
-        frequency: parseInt(document.getElementById('frequency').value),
-        scaleConstant: parseInt(document.getElementById('scale').value),
-        chaosY: parseFloat(document.getElementById('chaosY').value),
-        chaosX: parseFloat(document.getElementById('chaosX').value),
-        maxRotate: parseInt(document.getElementById('rotate').value),
-        color1: document.getElementById('color1').value,
-        color2: document.getElementById('color2').value,
-        noiseEnabled: document.getElementById('noiseEnabled').checked,
-        noiseIntensity: parseInt(document.getElementById('noiseIntensity').value),
-        noiseScale: parseInt(document.getElementById('noiseScale').value),
-        noiseOctaves: parseInt(document.getElementById('noiseOctaves').value),
-        shadowEnabled: document.getElementById('shadowEnabled').checked,
-        shadowOffsetX: parseFloat(document.getElementById('shadowOffsetX').value),
-        shadowOffsetY: parseFloat(document.getElementById('shadowOffsetY').value),
-        shadowBlur: parseFloat(document.getElementById('shadowBlur').value),
-        shadowSize: parseFloat(document.getElementById('shadowSize').value),
-        shadowColor: document.getElementById('shadowColor').value
+    const values = {
+        selectedShape: controls.shape.value,
+        frequency: parseInt(controls.frequency.value),
+        scaleConstant: parseInt(controls.scale.value),
+        chaosY: parseFloat(controls.chaosY.value),
+        chaosX: parseFloat(controls.chaosX.value),
+        maxRotate: parseInt(controls.rotate.value),
+        color1: controls.color1.value,
+        color2: controls.color2.value,
+        noiseEnabled: controls.noiseEnabled.checked,
+        noiseIntensity: parseInt(controls.noiseIntensity.value),
+        noiseScale: parseInt(controls.noiseScale.value),
+        noiseOctaves: parseInt(controls.noiseOctaves.value),
+        shadowEnabled: controls.shadowEnabled.checked,
+        shadowOffsetX: parseFloat(controls.shadowOffsetX.value),
+        shadowOffsetY: parseFloat(controls.shadowOffsetY.value),
+        shadowBlur: parseFloat(controls.shadowBlur.value),
+        shadowSize: parseFloat(controls.shadowSize.value),
+        shadowColor: controls.shadowColor.value
     };
+
+    // Validar valores antes de retornar
+    return validateControlValues(values);
 }
 
 /**
@@ -44,35 +194,35 @@ function generate() {
 function randomize() {
     // Forma aleatória
     const shapes = ['circle', 'square', 'triangle', 'hexagon'];
-    document.getElementById('shape').value = shapes[random(0, shapes.length)];
+    controls.shape.value = shapes[random(0, shapes.length)];
 
-    // Valores aleatórios para sliders
-    document.getElementById('frequency').value = random(15, 35);
-    document.getElementById('scale').value = random(20, 100);
-    document.getElementById('chaosY').value = random(20, 80);
-    document.getElementById('chaosX').value = random(20, 80);
-    document.getElementById('rotate').value = random(50, 150);
+    // Valores aleatórios para sliders usando CONFIG
+    controls.frequency.value = random(CONFIG.frequency.randomMin, CONFIG.frequency.randomMax);
+    controls.scale.value = random(CONFIG.scale.randomMin, CONFIG.scale.randomMax);
+    controls.chaosY.value = random(CONFIG.chaos.randomMin, CONFIG.chaos.randomMax);
+    controls.chaosX.value = random(CONFIG.chaos.randomMin, CONFIG.chaos.randomMax);
+    controls.rotate.value = random(CONFIG.rotation.randomMin, CONFIG.rotation.randomMax);
 
-    // Valores aleatórios para ruído
-    document.getElementById('noiseEnabled').checked = Math.random() > 0.3; // 70% de chance de estar habilitado
-    document.getElementById('noiseIntensity').value = random(20, 60);
-    document.getElementById('noiseScale').value = random(30, 100);
-    document.getElementById('noiseOctaves').value = random(2, 5);
+    // Valores aleatórios para ruído usando CONFIG
+    controls.noiseEnabled.checked = Math.random() > (1 - CONFIG.probability.noiseEnabled);
+    controls.noiseIntensity.value = random(CONFIG.noise.intensity.randomMin, CONFIG.noise.intensity.randomMax);
+    controls.noiseScale.value = random(CONFIG.noise.scale.randomMin, CONFIG.noise.scale.randomMax);
+    controls.noiseOctaves.value = random(CONFIG.noise.octaves.randomMin, CONFIG.noise.octaves.randomMax);
 
-    // Valores aleatórios para inner shadow
-    document.getElementById('shadowEnabled').checked = Math.random() > 0.3; // 70% de chance de estar habilitado
-    document.getElementById('shadowOffsetX').value = random(-5, 5) / 2;
-    document.getElementById('shadowOffsetY').value = random(-5, 5) / 2;
-    document.getElementById('shadowBlur').value = random(5, 30);
-    document.getElementById('shadowSize').value = (random(15, 40) / 10); // 1.5 a 4.0
+    // Valores aleatórios para inner shadow usando CONFIG
+    controls.shadowEnabled.checked = Math.random() > (1 - CONFIG.probability.shadowEnabled);
+    controls.shadowOffsetX.value = random(CONFIG.shadow.offset.randomMin, CONFIG.shadow.offset.randomMax);
+    controls.shadowOffsetY.value = random(CONFIG.shadow.offset.randomMin, CONFIG.shadow.offset.randomMax);
+    controls.shadowBlur.value = random(CONFIG.shadow.blur.randomMin, CONFIG.shadow.blur.randomMax);
+    controls.shadowSize.value = random(CONFIG.shadow.size.randomMin, CONFIG.shadow.size.randomMax, true);
     const shadowHue = random(0, 360);
-    document.getElementById('shadowColor').value = hslToHex(shadowHue, random(20, 80), random(10, 40));
+    controls.shadowColor.value = hslToHex(shadowHue, random(20, 80), random(10, 40));
 
     // Cores complementares aleatórias
     const hue1 = random(0, 360);
     const hue2 = (hue1 + random(60, 180)) % 360;
-    document.getElementById('color1').value = hslToHex(hue1, 70, 60);
-    document.getElementById('color2').value = hslToHex(hue2, 70, 60);
+    controls.color1.value = hslToHex(hue1, 70, 60);
+    controls.color2.value = hslToHex(hue2, 70, 60);
 
     // Atualizar displays e gerar
     updateValues();
@@ -83,18 +233,18 @@ function randomize() {
  * Atualiza os valores exibidos nos labels dos sliders
  */
 function updateValues() {
-    document.getElementById('frequencyValue').textContent = document.getElementById('frequency').value;
-    document.getElementById('scaleValue').textContent = document.getElementById('scale').value;
-    document.getElementById('chaosYValue').textContent = document.getElementById('chaosY').value;
-    document.getElementById('chaosXValue').textContent = document.getElementById('chaosX').value;
-    document.getElementById('rotateValue').textContent = document.getElementById('rotate').value;
-    document.getElementById('noiseIntensityValue').textContent = document.getElementById('noiseIntensity').value;
-    document.getElementById('noiseScaleValue').textContent = document.getElementById('noiseScale').value;
-    document.getElementById('noiseOctavesValue').textContent = document.getElementById('noiseOctaves').value;
-    document.getElementById('shadowOffsetXValue').textContent = document.getElementById('shadowOffsetX').value;
-    document.getElementById('shadowOffsetYValue').textContent = document.getElementById('shadowOffsetY').value;
-    document.getElementById('shadowBlurValue').textContent = document.getElementById('shadowBlur').value;
-    document.getElementById('shadowSizeValue').textContent = document.getElementById('shadowSize').value;
+    controls.frequencyValue.textContent = controls.frequency.value;
+    controls.scaleValue.textContent = controls.scale.value;
+    controls.chaosYValue.textContent = controls.chaosY.value;
+    controls.chaosXValue.textContent = controls.chaosX.value;
+    controls.rotateValue.textContent = controls.rotate.value;
+    controls.noiseIntensityValue.textContent = controls.noiseIntensity.value;
+    controls.noiseScaleValue.textContent = controls.noiseScale.value;
+    controls.noiseOctavesValue.textContent = controls.noiseOctaves.value;
+    controls.shadowOffsetXValue.textContent = controls.shadowOffsetX.value;
+    controls.shadowOffsetYValue.textContent = controls.shadowOffsetY.value;
+    controls.shadowBlurValue.textContent = controls.shadowBlur.value;
+    controls.shadowSizeValue.textContent = controls.shadowSize.value;
 }
 
 /**
@@ -104,14 +254,14 @@ function initEventListeners() {
     // Atualizar valores exibidos quando sliders mudarem
     ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
      'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize'].forEach(id => {
-        document.getElementById(id).addEventListener('input', updateValues);
+        controls[id].addEventListener('input', updateValues);
     });
 
     // Regenerar quando qualquer controle mudar
     ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'color1', 'color2',
      'noiseEnabled', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
      'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'].forEach(id => {
-        document.getElementById(id).addEventListener('input', generate);
+        controls[id].addEventListener('input', generate);
     });
 }
 
@@ -119,6 +269,7 @@ function initEventListeners() {
  * Inicialização da aplicação
  */
 function init() {
+    initControlsCache();
     initEventListeners();
     initSVG();
     generate();
