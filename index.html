@@ -143,13 +143,58 @@
             </div>
 
             <div class="control-group">
-                <label>Cor Inicial</label>
-                <input type="color" id="color1" value="#3498db">
+                <label>
+                    <input type="checkbox" id="gradientEnabled">
+                    Gradientes Distorcidos
+                </label>
+            </div>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 14px;">Cores Iniciais (Borda)</h3>
+
+            <div class="control-group">
+                <label>Cor Inicial A</label>
+                <input type="color" id="color1A" value="#3498db">
             </div>
 
             <div class="control-group">
-                <label>Cor Final</label>
-                <input type="color" id="color2" value="#e74c3c">
+                <label>Cor Inicial B</label>
+                <input type="color" id="color1B" value="#2ecc71">
+            </div>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 14px;">Cores Finais (Centro)</h3>
+
+            <div class="control-group">
+                <label>Cor Final A</label>
+                <input type="color" id="color2A" value="#e74c3c">
+            </div>
+
+            <div class="control-group">
+                <label>Cor Final B</label>
+                <input type="color" id="color2B" value="#f39c12">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Intensidade do Gradiente
+                    <span class="value-display" id="gradientIntensityValue">50</span>
+                </label>
+                <input type="range" id="gradientIntensity" min="0" max="100" value="50">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Escala do Gradiente
+                    <span class="value-display" id="gradientScaleValue">80</span>
+                </label>
+                <input type="range" id="gradientScale" min="20" max="200" value="80">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    Octaves do Gradiente
+                    <span class="value-display" id="gradientOctavesValue">4</span>
+                </label>
+                <input type="range" id="gradientOctaves" min="1" max="6" value="4">
             </div>
 
             <div class="button-group">
@@ -172,6 +217,7 @@
     <script src="js/utils.js?v=11"></script>
     <script src="js/warp.js?v=11"></script>
     <script src="js/noise.js?v=11"></script>
+    <script src="js/gradient.js?v=11"></script>
     <script src="js/shapes.js?v=11"></script>
     <script src="js/app.js?v=11"></script>
 </body>

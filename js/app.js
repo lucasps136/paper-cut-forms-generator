@@ -95,16 +95,18 @@ const controls = {};
 function initControlsCache() {
     const controlIds = [
         'shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate',
-        'color1', 'color2', 'noiseEnabled', 'noiseIntensity',
+        'color1A', 'color1B', 'color2A', 'color2B', 'noiseEnabled', 'noiseIntensity',
         'noiseScale', 'noiseOctaves', 'shadowEnabled', 'shadowOffsetX',
-        'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'
+        'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor',
+        'gradientEnabled', 'gradientIntensity', 'gradientScale', 'gradientOctaves'
     ];
 
     const valueDisplayIds = [
         'frequencyValue', 'scaleValue', 'chaosYValue', 'chaosXValue',
         'rotateValue', 'noiseIntensityValue', 'noiseScaleValue',
         'noiseOctavesValue', 'shadowOffsetXValue', 'shadowOffsetYValue',
-        'shadowBlurValue', 'shadowSizeValue'
+        'shadowBlurValue', 'shadowSizeValue', 'gradientIntensityValue',
+        'gradientScaleValue', 'gradientOctavesValue'
     ];
 
     controlIds.forEach(id => {
@@ -128,8 +130,10 @@ function getControlValues() {
         chaosY: parseFloat(controls.chaosY.value),
         chaosX: parseFloat(controls.chaosX.value),
         maxRotate: parseInt(controls.rotate.value),
-        color1: controls.color1.value,
-        color2: controls.color2.value,
+        color1A: controls.color1A.value,
+        color1B: controls.color1B.value,
+        color2A: controls.color2A.value,
+        color2B: controls.color2B.value,
         noiseEnabled: controls.noiseEnabled.checked,
         noiseIntensity: parseInt(controls.noiseIntensity.value),
         noiseScale: parseInt(controls.noiseScale.value),
@@ -139,7 +143,11 @@ function getControlValues() {
         shadowOffsetY: parseFloat(controls.shadowOffsetY.value),
         shadowBlur: parseFloat(controls.shadowBlur.value),
         shadowSize: parseFloat(controls.shadowSize.value),
-        shadowColor: controls.shadowColor.value
+        shadowColor: controls.shadowColor.value,
+        gradientEnabled: controls.gradientEnabled.checked,
+        gradientIntensity: parseInt(controls.gradientIntensity.value),
+        gradientScale: parseInt(controls.gradientScale.value),
+        gradientOctaves: parseInt(controls.gradientOctaves.value)
     };
 }
 
@@ -181,11 +189,16 @@ function randomize() {
     const shadowHue = random(0, 360);
     controls.shadowColor.value = hslToHex(shadowHue, random(20, 80), random(10, 40));
 
-    // Cores complementares aleatórias
-    const hue1 = random(0, 360);
-    const hue2 = (hue1 + random(60, 180)) % 360;
-    controls.color1.value = hslToHex(hue1, 70, 60);
-    controls.color2.value = hslToHex(hue2, 70, 60);
+    // Cores complementares aleatórias (4 cores)
+    const hue1A = random(0, 360);
+    const hue1B = (hue1A + random(30, 90)) % 360; // Cores iniciais próximas
+    const hue2A = (hue1A + random(120, 240)) % 360; // Cores finais complementares
+    const hue2B = (hue2A + random(30, 90)) % 360;
+
+    controls.color1A.value = hslToHex(hue1A, 70, 60);
+    controls.color1B.value = hslToHex(hue1B, 70, 60);
+    controls.color2A.value = hslToHex(hue2A, 70, 60);
+    controls.color2B.value = hslToHex(hue2B, 70, 60);
 
     // Atualizar displays e gerar
     updateValues();
@@ -208,6 +221,9 @@ function updateValues() {
     controls.shadowOffsetYValue.textContent = controls.shadowOffsetY.value;
     controls.shadowBlurValue.textContent = controls.shadowBlur.value;
     controls.shadowSizeValue.textContent = controls.shadowSize.value;
+    controls.gradientIntensityValue.textContent = controls.gradientIntensity.value;
+    controls.gradientScaleValue.textContent = controls.gradientScale.value;
+    controls.gradientOctavesValue.textContent = controls.gradientOctaves.value;
 }
 
 /**
@@ -216,14 +232,30 @@ function updateValues() {
 function initEventListeners() {
     // Atualizar valores exibidos quando sliders mudarem
     ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
-     'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize'].forEach(id => {
+     'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'gradientIntensity', 'gradientScale', 'gradientOctaves'].forEach(id => {
         controls[id].addEventListener('input', updateValues);
     });
 
-    // Regenerar quando qualquer controle mudar
-    ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'color1', 'color2',
-     'noiseEnabled', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
-     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'].forEach(id => {
+    // Garantir que gradiente e ruído sejam mutuamente exclusivos
+    controls.gradientEnabled.addEventListener('change', function() {
+        if (this.checked) {
+            controls.noiseEnabled.checked = false;
+        }
+        generate();
+    });
+
+    controls.noiseEnabled.addEventListener('change', function() {
+        if (this.checked) {
+            controls.gradientEnabled.checked = false;
+        }
+        generate();
+    });
+
+    // Regenerar quando qualquer controle mudar (exceto gradientEnabled e noiseEnabled que já têm listeners)
+    ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'color1A', 'color1B', 'color2A', 'color2B',
+     'noiseIntensity', 'noiseScale', 'noiseOctaves',
+     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor',
+     'gradientIntensity', 'gradientScale', 'gradientOctaves'].forEach(id => {
         controls[id].addEventListener('input', generate);
     });
 }
