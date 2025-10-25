@@ -110,6 +110,7 @@ function createNoisePattern(id, baseColor, options = {}) {
         seed = Math.random() * 1000
     } = options;
 
+    // Pattern size conservador para melhor performance
     const patternSize = 200;
     const simplex = new SimplexNoise(seed);
 
