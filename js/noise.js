@@ -110,9 +110,9 @@ function createNoisePattern(id, baseColor, options = {}) {
         seed = Math.random() * 1000
     } = options;
 
-    // Aumentar significativamente o tamanho do pattern para eliminar costuras visíveis
-    // Pattern maior = menos repetição = costuras menos aparentes
-    const patternSize = 1024;
+    // Tamanho otimizado do pattern: grande o suficiente para reduzir costuras,
+    // mas pequeno o suficiente para não travar o navegador
+    const patternSize = 400;
     const simplex = new SimplexNoise(seed);
 
     // Criar canvas temporário para gerar a textura
@@ -132,34 +132,16 @@ function createNoisePattern(id, baseColor, options = {}) {
         for (let x = 0; x < patternSize; x++) {
             const idx = (y * patternSize + x) * 4;
 
-            // Ruído fractal com múltiplas octaves e seamless tiling
+            // Ruído fractal com múltiplas octaves
             let noiseValue = 0;
             let amplitude = 1;
             let frequency = 1;
             let maxValue = 0;
 
             for (let o = 0; o < octaves; o++) {
-                // Implementar seamless tiling usando coordenadas circulares
-                // Mapear coordenadas cartesianas para coordenadas toroidais (wraparound)
-                const nx = (x / patternSize) - 0.5;
-                const ny = (y / patternSize) - 0.5;
-
-                // Converter para coordenadas 4D no torus para seamless tiling
-                const angleX = nx * 2 * Math.PI;
-                const angleY = ny * 2 * Math.PI;
-                const radius = patternSize / (2 * Math.PI * scale);
-
-                const sampleX = (Math.cos(angleX) * radius) * frequency;
-                const sampleY = (Math.sin(angleX) * radius) * frequency;
-                const sampleZ = (Math.cos(angleY) * radius) * frequency;
-                const sampleW = (Math.sin(angleY) * radius) * frequency;
-
-                // Combinar as dimensões para criar ruído tileable
-                // Usar duas camadas de ruído 2D para simular 4D
-                const noise1 = simplex.noise(sampleX, sampleZ);
-                const noise2 = simplex.noise(sampleY, sampleW);
-                noiseValue += (noise1 + noise2) / 2 * amplitude;
-
+                const sampleX = (x / scale) * frequency;
+                const sampleY = (y / scale) * frequency;
+                noiseValue += simplex.noise(sampleX, sampleY) * amplitude;
                 maxValue += amplitude;
                 amplitude *= 0.5;
                 frequency *= 2;

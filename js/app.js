@@ -35,7 +35,7 @@ const CONFIG = {
             randomMin: 2,
             randomMax: 5
         },
-        patternSize: 1024 // Tamanho do pattern (mesmo valor em noise.js)
+        patternSize: 400 // Tamanho do pattern (mesmo valor em noise.js)
     },
     // Outras configurações de sliders
     frequency: {
