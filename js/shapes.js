@@ -37,8 +37,10 @@ function initSVG() {
  * @param {number} params.chaosY - Intensidade da distorção no eixo Y
  * @param {number} params.chaosX - Intensidade da distorção no eixo X
  * @param {number} params.maxRotate - Rotação máxima em graus
- * @param {string} params.color1 - Cor inicial em hex
- * @param {string} params.color2 - Cor final em hex
+ * @param {string} params.color1A - Primeira cor inicial (borda) em hex
+ * @param {string} params.color1B - Segunda cor inicial (borda) em hex
+ * @param {string} params.color2A - Primeira cor final (centro) em hex
+ * @param {string} params.color2B - Segunda cor final (centro) em hex
  * @param {boolean} params.noiseEnabled - Se deve aplicar textura de ruído
  * @param {number} params.noiseIntensity - Intensidade do ruído (0-100)
  * @param {number} params.noiseScale - Escala do ruído
@@ -51,7 +53,6 @@ function initSVG() {
  * @param {string} params.shadowColor - Cor da sombra em hex
  * @param {boolean} params.gradientEnabled - Se deve usar gradientes distorcidos
  * @param {number} params.gradientIntensity - Intensidade da distorção do gradiente
- * @param {number} params.gradientComplexity - Complexidade do gradiente (número de stops)
  */
 function generateShapes(params) {
     const {
@@ -61,8 +62,10 @@ function generateShapes(params) {
         chaosY,
         chaosX,
         maxRotate,
-        color1,
-        color2,
+        color1A,
+        color1B,
+        color2A,
+        color2B,
         noiseEnabled = false,
         noiseIntensity = 10,
         noiseScale = 50,
@@ -74,8 +77,7 @@ function generateShapes(params) {
         shadowSize = 2,
         shadowColor = '#000000',
         gradientEnabled = false,
-        gradientIntensity = 50,
-        gradientComplexity = 5
+        gradientIntensity = 50
     } = params;
 
     initSVG();
@@ -88,7 +90,14 @@ function generateShapes(params) {
     for (let i = frequency; i >= 2; i--) {
         const rotateFactor = map(i, frequency, 1, 0, maxRotate);
         const t = map(i, frequency, 2, 0, 1);
-        const layerColor = interpolateColor(color1, color2, t);
+
+        // Interpolar entre as cores iniciais (1A, 1B) e finais (2A, 2B)
+        // Para cada camada, calculamos duas cores que serão usadas no gradiente
+        const layerColorA = interpolateColor(color1A, color2A, t);
+        const layerColorB = interpolateColor(color1B, color2B, t);
+
+        // Cor média para modo sem gradiente
+        const layerColor = interpolateColor(layerColorA, layerColorB, 0.5);
 
         const clipId = `clip-${i}`;
 
@@ -105,19 +114,18 @@ function generateShapes(params) {
 
         // Aplicar cor (sólida, ruído ou gradiente)
         if (gradientEnabled) {
-            // Usar gradiente distorcido
+            // Usar gradiente distorcido entre layerColorA e layerColorB
             const patternId = `noise-gradient-${i}`;
             const patternData = createNoiseGradientPattern(
                 patternId,
-                color1,
-                color2,
+                layerColorA,
+                layerColorB,
                 i,
                 {
                     intensity: gradientIntensity,
                     scale: noiseScale || 50,
                     octaves: noiseOctaves || 3,
-                    seed: i * 789.123,
-                    gradientComplexity: gradientComplexity
+                    seed: i * 789.123
                 }
             );
             applyNoiseGradientPattern(svg, shape, patternId, patternData);
