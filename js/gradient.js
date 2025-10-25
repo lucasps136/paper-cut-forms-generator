@@ -193,20 +193,18 @@ function createNoiseGradientPattern(id, color1, color2, layerIndex, options = {}
             // Normalizar ruído para 0-1
             noiseValue = (noiseValue / maxValue + 1) / 2;
 
-            // Combinar distância radial com ruído para distorção
-            const distortionAmount = (intensity / 100) * 0.5;
+            // Combinar distância radial com ruído para distorção do gradiente
+            // intensity controla APENAS a distorção do gradiente, não a variação de cor
+            const distortionAmount = (intensity / 100) * 0.6;
             let t = normalizedDistance + (noiseValue - 0.5) * distortionAmount;
             t = Math.max(0, Math.min(1, t));
 
-            // Interpolar cor
+            // Interpolar cor (SEM variação adicional - gradiente puro)
             const color = interpolateColorRGB(color1, color2, t);
 
-            // Adicionar variação sutil adicional baseada em ruído
-            const colorVariation = (noiseValue - 0.5) * (intensity / 100) * 20;
-
-            data[idx] = Math.max(0, Math.min(255, color.r + colorVariation));
-            data[idx + 1] = Math.max(0, Math.min(255, color.g + colorVariation));
-            data[idx + 2] = Math.max(0, Math.min(255, color.b + colorVariation));
+            data[idx] = color.r;
+            data[idx + 1] = color.g;
+            data[idx + 2] = color.b;
             data[idx + 3] = 255;
         }
     }

@@ -236,11 +236,26 @@ function initEventListeners() {
         controls[id].addEventListener('input', updateValues);
     });
 
-    // Regenerar quando qualquer controle mudar
+    // Garantir que gradiente e ruído sejam mutuamente exclusivos
+    controls.gradientEnabled.addEventListener('change', function() {
+        if (this.checked) {
+            controls.noiseEnabled.checked = false;
+        }
+        generate();
+    });
+
+    controls.noiseEnabled.addEventListener('change', function() {
+        if (this.checked) {
+            controls.gradientEnabled.checked = false;
+        }
+        generate();
+    });
+
+    // Regenerar quando qualquer controle mudar (exceto gradientEnabled e noiseEnabled que já têm listeners)
     ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'color1A', 'color1B', 'color2A', 'color2B',
-     'noiseEnabled', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
+     'noiseIntensity', 'noiseScale', 'noiseOctaves',
      'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor',
-     'gradientEnabled', 'gradientIntensity', 'gradientScale', 'gradientOctaves'].forEach(id => {
+     'gradientIntensity', 'gradientScale', 'gradientOctaves'].forEach(id => {
         controls[id].addEventListener('input', generate);
     });
 }
