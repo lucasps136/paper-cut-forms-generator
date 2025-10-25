@@ -207,7 +207,7 @@ function generateShapes(params) {
     applyWarpDistortion(svgEl, chaosX, chaosY);
 
     // Reaplicar clip-paths APÓS distorção para garantir contenção
-    reapplyClipsAfterDistortion(svgEl, shapeMetadata);
+    reapplyClipsAfterDistortion(svgEl, shapeMetadata, frequency);
 }
 
 /**
@@ -359,18 +359,70 @@ function applyColorToShape(shape, color, layerIndex, noiseOptions = null) {
  * Reaplica os clip-paths após a distorção para garantir contenção
  * @param {SVGElement} svgEl - Elemento SVG contendo as formas distorcidas
  * @param {Array} shapeMetadata - Array com metadados das formas
+ * @param {number} frequency - Número de camadas (para identificar forma MAIOR)
  */
-function reapplyClipsAfterDistortion(svgEl, shapeMetadata) {
+function reapplyClipsAfterDistortion(svgEl, shapeMetadata, frequency) {
     // Pegar todas as formas visíveis (não clip-paths) no grupo principal
     const allShapes = Array.from(svgEl.querySelectorAll('g > path, g > circle, g > rect'))
         .filter(shape => !shape.closest('clipPath'));
 
-    // Aplicar clip-path a cada forma baseado nos metadados
+    if (allShapes.length === 0) return;
+
+    // 1. Criar clip-path GLOBAL da forma MAIOR (primeira forma, já distorcida)
+    const largestShape = allShapes[0]; // Primeira forma é a MAIOR (i=frequency)
+    const globalClipId = 'clip-global-largest';
+
+    // Clonar o path da forma MAIOR distorcida para usar como clip global
+    const globalClipPath = svgEl.querySelector('defs').appendChild(
+        document.createElementNS('http://www.w3.org/2000/svg', 'clipPath')
+    );
+    globalClipPath.setAttribute('id', globalClipId);
+
+    // Clonar a forma MAIOR (já distorcida) para o clip-path global
+    const clonedLargestShape = largestShape.cloneNode(true);
+    clonedLargestShape.removeAttribute('clip-path'); // Remover qualquer clip existente
+    clonedLargestShape.removeAttribute('filter'); // Remover filtros
+    clonedLargestShape.setAttribute('fill', '#000'); // Cor não importa para clip
+    globalClipPath.appendChild(clonedLargestShape);
+
+    // 2. Aplicar clip-path individual E clip global em cada forma
     shapeMetadata.forEach((meta, index) => {
-        if (meta.previousClipId && allShapes[index]) {
-            allShapes[index].setAttribute('clip-path', `url(#${meta.previousClipId})`);
+        const shape = allShapes[index];
+        if (!shape) return;
+
+        // Para a forma MAIOR (primeira), não aplicar clip
+        if (index === 0) {
+            // Forma MAIOR não recebe clip (é o limite máximo)
+            return;
         }
+
+        // Para todas as outras formas: aplicar clip individual
+        if (meta.previousClipId) {
+            shape.setAttribute('clip-path', `url(#${meta.previousClipId})`);
+        }
+
+        // 3. Envolver todas as formas menores em um grupo com clip global
+        // Isso será feito depois do loop
     });
+
+    // 3. Criar grupo com clip global e mover todas as formas MENORES para dentro
+    const mainGroup = svgEl.querySelector('g');
+    if (!mainGroup) return;
+
+    // Criar novo grupo com clip da forma MAIOR
+    const globalClipGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    globalClipGroup.setAttribute('clip-path', `url(#${globalClipId})`);
+
+    // Mover todas as formas EXCETO a primeira (MAIOR) para o grupo com clip global
+    for (let i = 1; i < allShapes.length; i++) {
+        const shape = allShapes[i];
+        if (shape && shape.parentNode === mainGroup) {
+            globalClipGroup.appendChild(shape);
+        }
+    }
+
+    // Adicionar o grupo com clip global de volta ao grupo principal
+    mainGroup.appendChild(globalClipGroup);
 }
 
 /**
