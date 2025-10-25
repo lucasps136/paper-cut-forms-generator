@@ -88,6 +88,9 @@ function generateShapes(params) {
 
     const shapeGroup = svg.group();
 
+    // Array para armazenar metadados das formas para reaplicar clips após distorção
+    const shapeMetadata = [];
+
     let previousClipId = null;
 
     // Gerar camadas - da maior (borda) para menor (centro)
@@ -168,17 +171,25 @@ function generateShapes(params) {
             shape.attr('filter', `url(#${filterId})`);
         }
 
-        // Aplicar clip da camada anterior (se existir)
-        if (previousClipId) {
-            shape.attr('clip-path', `url(#${previousClipId})`);
-        }
+        // NÃO aplicar clip ainda - será aplicado após distorção
+        // Armazenar metadados para aplicar depois
+        shapeMetadata.push({
+            layer: i,
+            clipId: clipId,
+            previousClipId: previousClipId,
+            shapeType: selectedShape,
+            size: i * scaleConstant,
+            rotateFactor: rotateFactor
+        });
 
         // Adicionar forma ao grupo
         shapeGroup.add(shape);
 
-        // Criar clip-path para próxima camada
+        // Criar clip-path para próxima camada com margem de segurança
+        // Reduzir tamanho em ~2% para garantir contenção após distorção
         const clipPath = svg.defs().clip().attr('id', clipId);
-        const clipShape = createShape(selectedShape, i * scaleConstant);
+        const clipPadding = 0.98; // 98% do tamanho original
+        const clipShape = createShape(selectedShape, i * scaleConstant * clipPadding);
 
         clipShape
             .cx(SVG_WIDTH / 2)
@@ -194,6 +205,9 @@ function generateShapes(params) {
     // Aplicar distorção senoidal
     const svgEl = document.getElementById('chaos-svg');
     applyWarpDistortion(svgEl, chaosX, chaosY);
+
+    // Reaplicar clip-paths APÓS distorção para garantir contenção
+    reapplyClipsAfterDistortion(svgEl, shapeMetadata);
 }
 
 /**
@@ -339,6 +353,24 @@ function applyColorToShape(shape, color, layerIndex, noiseOptions = null) {
     }
 
     return shape;
+}
+
+/**
+ * Reaplica os clip-paths após a distorção para garantir contenção
+ * @param {SVGElement} svgEl - Elemento SVG contendo as formas distorcidas
+ * @param {Array} shapeMetadata - Array com metadados das formas
+ */
+function reapplyClipsAfterDistortion(svgEl, shapeMetadata) {
+    // Pegar todas as formas visíveis (não clip-paths) no grupo principal
+    const allShapes = Array.from(svgEl.querySelectorAll('g > path, g > circle, g > rect'))
+        .filter(shape => !shape.closest('clipPath'));
+
+    // Aplicar clip-path a cada forma baseado nos metadados
+    shapeMetadata.forEach((meta, index) => {
+        if (meta.previousClipId && allShapes[index]) {
+            allShapes[index].setAttribute('clip-path', `url(#${meta.previousClipId})`);
+        }
+    });
 }
 
 /**
