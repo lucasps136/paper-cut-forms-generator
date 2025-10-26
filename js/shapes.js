@@ -356,8 +356,9 @@ function reapplyClipsAfterDistortion(svgEl, shapeMetadata, frequency) {
     const defs = svgEl.querySelector('defs');
     if (!mainGroup || !defs) return;
 
-    // Margem de segurança: clips serão 97% do tamanho da forma (3% menor)
-    const clipScaleFactor = 0.97;
+    // Margem visual: clips serão 105% do tamanho da forma (5% maior)
+    // Isso preserva as bordas do PAI e ainda recorta FILHAS que ultrapassam
+    const clipScaleFactor = 1.05;
 
     // 1. Criar clip-path GLOBAL baseado na forma MAIOR (já distorcida)
     const largestShape = allShapes[0];
