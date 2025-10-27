@@ -194,7 +194,7 @@ function createNoiseGradientPattern(id, color1, color2, layerIndex, options = {}
 
             // Combinar distância radial com ruído para distorção do gradiente
             // intensity controla APENAS a distorção do gradiente, não a variação de cor
-            const distortionAmount = (intensity / 100) * 0.6;
+            const distortionAmount = (intensity / 100) * 0.3;
             let t = normalizedDistance + (noiseValue - 0.5) * distortionAmount;
             t = Math.max(0, Math.min(1, t));
 

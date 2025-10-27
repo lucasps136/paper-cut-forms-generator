@@ -147,8 +147,8 @@ function createNoisePattern(id, baseColor, options = {}) {
             // Normalizar para 0-1
             noiseValue = (noiseValue / maxValue + 1) / 2;
 
-            // Aplicar intensidade
-            const effect = (noiseValue - 0.5) * (intensity / 100);
+            // Aplicar intensidade (0.3 para normalizar com gradiente)
+            const effect = (noiseValue - 0.5) * (intensity / 100) * 0.3;
 
             // Aplicar ruído à cor base
             data[idx] = Math.max(0, Math.min(255, rgb.r + effect * 255));
