@@ -119,9 +119,9 @@ function generateShapes(params) {
             .attr('stroke', 'none')
             .attr('stroke-width', 0);
 
-        // Aplicar cor: gradiente OU cor sólida com textura (mutuamente exclusivos)
+        // Aplicar cor: gradiente, cor sólida, e opcionalmente textura de ruído
         if (gradientEnabled) {
-            // Gradiente distorcido já tem sua própria textura através do ruído
+            // Gradiente distorcido (forma orgânica)
             const patternId = `noise-gradient-${i}`;
             const patternData = createNoiseGradientPattern(
                 patternId,
@@ -136,6 +136,35 @@ function generateShapes(params) {
                 }
             );
             applyNoiseGradientPattern(svg, shape, patternId, patternData);
+
+            // Se ruído também estiver ativado, aplicar textura adicional por cima
+            if (noiseEnabled) {
+                const noisePatternId = `additional-noise-${i}`;
+                const noiseData = createNoisePattern(noisePatternId, layerColorA, {
+                    scale: noiseScale,
+                    intensity: noiseIntensity,
+                    octaves: noiseOctaves,
+                    seed: i * 456.789
+                });
+
+                // Aplicar como overlay com opacidade
+                const bbox = shape.bbox();
+                const noiseRect = svg.rect(bbox.width, bbox.height)
+                    .move(bbox.x, bbox.y)
+                    .attr('fill', `url(#${noisePatternId})`)
+                    .attr('opacity', 0.4)
+                    .attr('style', 'mix-blend-mode: overlay; pointer-events: none;');
+
+                // Criar pattern SVG para o ruído adicional
+                const pattern = svg.defs()
+                    .pattern(noiseData.size, noiseData.size)
+                    .attr('id', noisePatternId)
+                    .attr('patternUnits', 'userSpaceOnUse');
+                pattern.image(noiseData.dataUrl).size(noiseData.size, noiseData.size);
+
+                // Adicionar ao grupo pai
+                shape.parent().add(noiseRect);
+            }
         } else if (noiseEnabled) {
             // Cor sólida com textura de ruído
             applyColorToShape(shape, layerColor, i, {
