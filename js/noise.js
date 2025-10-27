@@ -1,6 +1,97 @@
 /**
- * Paper Cut Forms Generator - Noise Texture Generation
- * Gera texturas de ruído procedural inspiradas no nnnoise
+ * Paper Cut Forms Generator - Noise Texture Generation (Vetorial)
+ * Gera texturas de ruído vetorial usando SVG feTurbulence
+ */
+
+/**
+ * Cria filtro SVG de textura vetorial usando feTurbulence
+ * @param {object} svg - Instância SVG.js
+ * @param {string} filterId - ID único para o filtro
+ * @param {object} options - Opções de textura
+ * @param {number} options.scale - Escala da textura (20-200, padrão 80)
+ * @param {number} options.intensity - Intensidade da textura (0-100, padrão 50)
+ * @param {number} options.octaves - Número de octaves (1-6, padrão 4)
+ * @param {number} options.seed - Seed para textura consistente
+ * @returns {object} Filtro SVG criado
+ */
+function createVectorTextureFilter(svg, filterId, options = {}) {
+    const {
+        scale = 80,
+        intensity = 50,
+        octaves = 4,
+        seed = 12345
+    } = options;
+
+    // Remover filtro existente se já existe
+    const existingFilter = svg.defs().findOne(`#${filterId}`);
+    if (existingFilter) {
+        existingFilter.remove();
+    }
+
+    // Converter escala para baseFrequency (inversamente proporcional)
+    // scale 20 (máximo zoom) → baseFrequency ~1.0
+    // scale 200 (mínimo zoom) → baseFrequency ~0.1
+    const baseFrequency = (1 / scale) * 20;
+
+    // Converter intensidade para slope (0-100 → 0-0.3)
+    const slope = (intensity / 100) * 0.3;
+    const intercept = 0.5 - (slope * 0.5); // Centralizar em 0.5
+
+    // Criar filtro
+    const filter = svg.defs().element('filter');
+    filter.attr({
+        id: filterId,
+        x: '-20%',
+        y: '-20%',
+        width: '140%',
+        height: '140%'
+    });
+
+    // 1. Gerar ruído fractal
+    filter.element('feTurbulence').attr({
+        type: 'fractalNoise',
+        baseFrequency: baseFrequency,
+        numOctaves: octaves,
+        seed: seed,
+        result: 'turbulence'
+    });
+
+    // 2. Converter para escala de cinza
+    filter.element('feColorMatrix').attr({
+        in: 'turbulence',
+        type: 'saturate',
+        values: '0',
+        result: 'grayscale'
+    });
+
+    // 3. Ajustar intensidade
+    const componentTransfer = filter.element('feComponentTransfer');
+    componentTransfer.attr({
+        in: 'grayscale',
+        result: 'adjusted'
+    });
+
+    ['feFuncR', 'feFuncG', 'feFuncB'].forEach(func => {
+        componentTransfer.element(func).attr({
+            type: 'linear',
+            slope: slope,
+            intercept: intercept
+        });
+    });
+
+    // 4. Misturar com a forma original
+    filter.element('feBlend').attr({
+        in: 'SourceGraphic',
+        in2: 'adjusted',
+        mode: 'multiply'
+    });
+
+    return filter;
+}
+
+/**
+ * CÓDIGO ANTIGO REMOVIDO - Agora usamos feTurbulence vetorial
+ * Mantido apenas SimplexNoise para compatibilidade temporária
  */
 
 /**

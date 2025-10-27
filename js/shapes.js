@@ -82,8 +82,15 @@ function generateShapes(params) {
 
     const shapeGroup = svg.group();
 
-    // Tamanho da textura baseado na forma maior (para evitar repetição/costuras)
-    const textureSize = frequency * scaleConstant;
+    // Criar filtro de textura vetorial ÚNICO se necessário (será reutilizado em todas as camadas)
+    if (textureEnabled) {
+        createVectorTextureFilter(svg, 'shared-texture-filter', {
+            scale: textureScale,
+            intensity: textureIntensity,
+            octaves: textureOctaves,
+            seed: 12345 // Seed fixo para textura consistente
+        });
+    }
 
     // Array para armazenar metadados das formas para reaplicar clips após distorção
     const shapeMetadata = [];
@@ -118,44 +125,26 @@ function generateShapes(params) {
 
         // Aplicar cor base: gradiente OU cor sólida
         if (gradientEnabled) {
-            // Usar gradiente com ou sem textura
-            // Se textureEnabled=false, intensity=0 cria gradiente puro
-            const patternId = `noise-gradient-${i}`;
-            const patternData = createNoiseGradientPattern(
-                patternId,
-                layerColorA,
-                layerColorB,
-                i,
-                {
-                    intensity: textureEnabled ? textureIntensity : 0,
-                    scale: textureScale,
-                    octaves: textureOctaves,
-                    seed: textureEnabled ? 12345 : (i * 789.123), // Seed fixo quando textura ativada
-                    patternSize: textureSize // Usar tamanho baseado na forma maior
-                }
-            );
-            applyNoiseGradientPattern(svg, shape, patternId, patternData);
-        } else if (textureEnabled) {
-            // Cor sólida COM textura
-            applyColorToShape(shape, layerColorA, i, {
-                enabled: true,
-                scale: textureScale,
-                intensity: textureIntensity,
-                octaves: textureOctaves,
-                seed: 12345, // Seed fixo para textura consistente
-                patternSize: textureSize // Usar tamanho baseado na forma maior
-            });
+            // Gradiente vetorial (sempre limpo, sem textura embutida)
+            const gradientId = `gradient-${i}`;
+            createPureGradient(svg, gradientId, layerColorA, layerColorB);
+            shape.attr('fill', `url(#${gradientId})`);
         } else {
-            // Cor sólida SEM textura
+            // Cor sólida
             shape.attr('fill', layerColorA);
         }
 
-        // Aplicar inner shadow DEPOIS do fill
+        // Aplicar filtros: textura e/ou shadow
+        const filters = [];
+
+        if (textureEnabled) {
+            filters.push('url(#shared-texture-filter)');
+        }
+
         if (shadowEnabled && shadowBlur > 0) {
             const filterId = `inner-shadow-${i}`;
 
             // Calcular valores progressivos de blur e offset
-            // shadowSize controla o multiplicador final (ex: 2 = vai de 0.5x a 2x)
             const minMultiplier = 0.5;
             const maxMultiplier = shadowSize;
             const shadowProgress = minMultiplier + (t * (maxMultiplier - minMultiplier));
@@ -163,13 +152,15 @@ function generateShapes(params) {
             const blurAmount = shadowBlur * shadowProgress;
             const offsetXAmount = shadowOffsetX * shadowProgress;
             const offsetYAmount = shadowOffsetY * shadowProgress;
-            const opacityAmount = 0.7; // Opacidade fixa em 70%
+            const opacityAmount = 0.7;
 
-            // Criar filtro de inner shadow com valores progressivos
             createInnerShadowFilter(filterId, blurAmount, offsetXAmount, offsetYAmount, opacityAmount, shadowColor);
+            filters.push(`url(#${filterId})`);
+        }
 
-            // Aplicar filtro à forma
-            shape.attr('filter', `url(#${filterId})`);
+        // Aplicar filtros combinados (SVG suporta múltiplos filtros)
+        if (filters.length > 0) {
+            shape.attr('filter', filters.join(' '));
         }
 
         // Armazenar metadados para criar clips após distorção

@@ -1,7 +1,38 @@
 /**
- * Paper Cut Forms Generator - Distorted Gradient System
- * Gera gradientes distorcidos e orgânicos usando ruído Simplex
+ * Paper Cut Forms Generator - Gradient System (Vetorial)
+ * Gera gradientes vetoriais puros (textura aplicada separadamente via filtro)
  */
+
+/**
+ * Cria gradiente radial puro (sem textura embutida)
+ * @param {object} svg - Instância SVG.js
+ * @param {string} gradientId - ID único para o gradiente
+ * @param {string} color1 - Cor inicial em hex
+ * @param {string} color2 - Cor final em hex
+ * @returns {object} Gradiente SVG criado
+ */
+function createPureGradient(svg, gradientId, color1, color2) {
+    // Remover gradiente existente se já existe
+    const existingGradient = svg.defs().findOne(`#${gradientId}`);
+    if (existingGradient) {
+        existingGradient.remove();
+    }
+
+    // Criar gradiente radial simples e limpo
+    const gradient = svg.defs().gradient('radial', (add) => {
+        add.stop(0, color1);
+        add.stop(1, color2);
+    });
+
+    gradient.attr({
+        id: gradientId,
+        cx: '50%',
+        cy: '50%',
+        r: '50%'
+    });
+
+    return gradient;
+}
 
 /**
  * Cria um gradiente radial distorcido para uma forma
