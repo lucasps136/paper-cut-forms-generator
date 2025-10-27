@@ -94,7 +94,7 @@ const controls = {};
  */
 function initControlsCache() {
     const controlIds = [
-        'shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate',
+        'shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'seed',
         'color1A', 'color1B', 'color2A', 'color2B', 'textureEnabled', 'textureIntensity',
         'textureScale', 'textureOctaves', 'shadowEnabled', 'shadowOffsetX',
         'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor',
@@ -148,6 +148,7 @@ function getControlValues() {
         chaosY: parseFloat(controls.chaosY.value),
         chaosX: parseFloat(controls.chaosX.value),
         maxRotate: parseInt(controls.rotate.value),
+        seed: parseInt(controls.seed.value),
         color1A: controls.color1A.value,
         color1B: controls.color1B.value,
         color2A: controls.color2A.value,
@@ -172,6 +173,14 @@ function getControlValues() {
 function generate() {
     const params = getControlValues();
     generateShapes(params);
+}
+
+/**
+ * Gera uma nova seed aleatória
+ */
+function generateNewSeed() {
+    controls.seed.value = Math.floor(Math.random() * 999999);
+    generate();
 }
 
 /**
@@ -259,7 +268,7 @@ function initEventListeners() {
     });
 
     // Regenerar quando qualquer controle mudar
-    ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'color1A', 'color1B', 'color2A', 'color2B',
+    ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'seed', 'color1A', 'color1B', 'color2A', 'color2B',
      'textureIntensity', 'textureScale', 'textureOctaves',
      'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'].forEach(id => {
         controls[id].addEventListener('input', generate);

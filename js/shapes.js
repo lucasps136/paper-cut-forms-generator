@@ -61,6 +61,7 @@ function generateShapes(params) {
         chaosY,
         chaosX,
         maxRotate,
+        seed = 12345,
         color1A,
         color1B,
         color2A,
@@ -88,7 +89,7 @@ function generateShapes(params) {
             scale: textureScale,
             intensity: textureIntensity,
             octaves: textureOctaves,
-            seed: 12345 // Seed fixo para textura consistente
+            seed: seed
         });
     }
 
@@ -136,7 +137,7 @@ function generateShapes(params) {
                     intensity: 0,  // Sempre 0 para gradiente puro (textura vem do filtro)
                     scale: textureScale,
                     octaves: textureOctaves,
-                    seed: i * 789.123,
+                    seed: seed + (i * 789.123),
                     patternSize: 400
                 }
             );
