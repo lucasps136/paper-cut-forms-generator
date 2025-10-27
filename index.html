@@ -67,35 +67,37 @@
                 <input type="range" id="rotate" min="0" max="35" value="15">
             </div>
 
+            <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 14px;">Textura</h3>
+
             <div class="control-group">
                 <label>
-                    <input type="checkbox" id="noiseEnabled">
-                    Ativar Textura de Ruído
+                    <input type="checkbox" id="textureEnabled">
+                    Ativar Textura
                 </label>
             </div>
 
             <div class="control-group">
                 <label>
-                    Intensidade do Ruído
-                    <span class="value-display" id="noiseIntensityValue">10</span>
+                    Intensidade da Textura
+                    <span class="value-display" id="textureIntensityValue">50</span>
                 </label>
-                <input type="range" id="noiseIntensity" min="0" max="20" value="10">
+                <input type="range" id="textureIntensity" min="0" max="100" value="50">
             </div>
 
             <div class="control-group">
                 <label>
-                    Escala do Ruído
-                    <span class="value-display" id="noiseScaleValue">50</span>
+                    Escala da Textura
+                    <span class="value-display" id="textureScaleValue">80</span>
                 </label>
-                <input type="range" id="noiseScale" min="10" max="150" value="50">
+                <input type="range" id="textureScale" min="20" max="200" value="80">
             </div>
 
             <div class="control-group">
                 <label>
-                    Detalhe do Ruído
-                    <span class="value-display" id="noiseOctavesValue">3</span>
+                    Octaves da Textura
+                    <span class="value-display" id="textureOctavesValue">4</span>
                 </label>
-                <input type="range" id="noiseOctaves" min="1" max="6" value="3">
+                <input type="range" id="textureOctaves" min="1" max="6" value="4">
             </div>
 
             <div class="control-group">
@@ -173,32 +175,6 @@
                 <input type="color" id="color2B" value="#f39c12">
             </div>
 
-            <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 14px;">Textura do Gradiente</h3>
-
-            <div class="control-group">
-                <label>
-                    Distorção da Textura
-                    <span class="value-display" id="gradientIntensityValue">50</span>
-                </label>
-                <input type="range" id="gradientIntensity" min="0" max="100" value="50">
-            </div>
-
-            <div class="control-group">
-                <label>
-                    Escala da Textura
-                    <span class="value-display" id="gradientScaleValue">80</span>
-                </label>
-                <input type="range" id="gradientScale" min="20" max="200" value="80">
-            </div>
-
-            <div class="control-group">
-                <label>
-                    Octaves da Textura
-                    <span class="value-display" id="gradientOctavesValue">4</span>
-                </label>
-                <input type="range" id="gradientOctaves" min="1" max="6" value="4">
-            </div>
-
             <div class="button-group">
                 <button onclick="generate()">Gerar</button>
                 <button onclick="randomize()">Aleatório</button>
@@ -216,11 +192,11 @@
     </div>
 
     <!-- JavaScript Modules -->
-    <script src="js/utils.js?v=11"></script>
-    <script src="js/warp.js?v=11"></script>
-    <script src="js/noise.js?v=11"></script>
-    <script src="js/gradient.js?v=11"></script>
-    <script src="js/shapes.js?v=11"></script>
-    <script src="js/app.js?v=11"></script>
+    <script src="js/utils.js?v=12"></script>
+    <script src="js/warp.js?v=12"></script>
+    <script src="js/noise.js?v=12"></script>
+    <script src="js/gradient.js?v=12"></script>
+    <script src="js/shapes.js?v=12"></script>
+    <script src="js/app.js?v=12"></script>
 </body>
 </html>
