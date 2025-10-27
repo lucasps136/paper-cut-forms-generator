@@ -5,7 +5,7 @@
 
 // Cache global para padrões de gradiente com ruído
 const gradientPatternCache = new Map();
-const MAX_GRADIENT_CACHE_SIZE = 10;
+const MAX_GRADIENT_CACHE_SIZE = 50; // Aumentado para suportar até 40 camadas únicas
 
 /**
  * Limpa o cache de padrões de gradiente
@@ -19,12 +19,11 @@ function clearGradientPatternCache() {
  */
 function getGradientPatternCacheKey(color1, color2, options) {
     const { intensity, scale, octaves } = options;
-    // Agrupa parâmetros similares
-    const color1Bucket = color1.substring(0, 4);
-    const color2Bucket = color2.substring(0, 4);
+    // Usar cores completas para evitar que camadas diferentes usem mesmo gradiente
+    // Cache ainda funciona quando gerar múltiplas vezes com mesmas configurações
     const intensityBucket = Math.round(intensity / 10) * 10;
     const scaleBucket = Math.round(scale / 10) * 10;
-    return `${color1Bucket}-${color2Bucket}-${intensityBucket}-${scaleBucket}-${octaves}`;
+    return `${color1}-${color2}-${intensityBucket}-${scaleBucket}-${octaves}`;
 }
 
 /**

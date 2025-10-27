@@ -5,7 +5,7 @@
 
 // Cache global para padrões de ruído (reduz criação de múltiplos canvas)
 const noisePatternCache = new Map();
-const MAX_CACHE_SIZE = 10; // Limitar cache para evitar uso excessivo de memória
+const MAX_CACHE_SIZE = 50; // Aumentado para suportar até 40 camadas únicas
 
 /**
  * Limpa o cache de padrões de ruído
@@ -19,11 +19,11 @@ function clearNoisePatternCache() {
  */
 function getNoisePatternCacheKey(baseColor, options) {
     const { scale, intensity, octaves } = options;
-    // Agrupa cores similares e parâmetros para aumentar hit rate do cache
-    const colorBucket = baseColor.substring(0, 4); // Agrupa cores similares
+    // Usar cor completa para evitar que camadas diferentes usem mesma textura
+    // Cache ainda funciona quando gerar múltiplas vezes com mesmas configurações
     const scaleBucket = Math.round(scale / 10) * 10;
     const intensityBucket = Math.round(intensity / 10) * 10;
-    return `${colorBucket}-${scaleBucket}-${intensityBucket}-${octaves}`;
+    return `${baseColor}-${scaleBucket}-${intensityBucket}-${octaves}`;
 }
 
 /**
