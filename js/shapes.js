@@ -94,9 +94,9 @@ function generateShapes(params) {
     let previousClipId = null;
 
     // Gerar camadas - da maior (borda) para menor (centro)
-    for (let i = frequency; i >= 2; i--) {
+    for (let i = frequency; i >= 1; i--) {
         const rotateFactor = map(i, frequency, 1, 0, maxRotate);
-        const t = map(i, frequency, 2, 0, 1);
+        const t = map(i, frequency, 1, 0, 1);
 
         // Interpolar entre as cores iniciais (1A, 1B) e finais (2A, 2B)
         // Para cada camada, calculamos duas cores que serão usadas no gradiente
