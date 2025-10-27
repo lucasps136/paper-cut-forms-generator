@@ -82,38 +82,8 @@ function generateShapes(params) {
 
     const shapeGroup = svg.group();
 
-    // Tamanho da textura baseado na forma maior
+    // Tamanho da textura baseado na forma maior (para evitar repetição/costuras)
     const textureSize = frequency * scaleConstant;
-
-    // Criar textura ÚNICA se necessário (será reutilizada em todas as camadas)
-    let sharedTexturePattern = null;
-    if (textureEnabled) {
-        // Criar pattern de ruído compartilhado
-        const sharedPatternId = 'shared-texture-pattern';
-        sharedTexturePattern = createNoisePattern(sharedPatternId, '#808080', {
-            scale: textureScale,
-            intensity: textureIntensity,
-            octaves: textureOctaves,
-            seed: 12345, // Seed fixo para textura consistente
-            patternSize: textureSize
-        });
-
-        // Criar o pattern SVG uma vez
-        const existingPattern = svg.defs().findOne(`#${sharedPatternId}`);
-        if (existingPattern) {
-            existingPattern.remove();
-        }
-
-        const pattern = svg.defs()
-            .pattern(sharedTexturePattern.size, sharedTexturePattern.size)
-            .attr('id', sharedPatternId)
-            .attr('patternUnits', 'userSpaceOnUse')
-            .attr('x', (SVG_WIDTH / 2) - (sharedTexturePattern.size / 2))
-            .attr('y', (SVG_HEIGHT / 2) - (sharedTexturePattern.size / 2));
-
-        pattern.image(sharedTexturePattern.dataUrl)
-            .size(sharedTexturePattern.size, sharedTexturePattern.size);
-    }
 
     // Array para armazenar metadados das formas para reaplicar clips após distorção
     const shapeMetadata = [];
@@ -165,17 +135,16 @@ function generateShapes(params) {
                 }
             );
             applyNoiseGradientPattern(svg, shape, patternId, patternData);
-        } else if (textureEnabled && sharedTexturePattern) {
-            // Cor sólida COM textura compartilhada
-            shape.attr('fill', layerColorA);
-
-            // Aplicar textura como overlay
-            const textureLayer = shape.clone();
-            textureLayer
-                .attr('fill', `url(#shared-texture-pattern)`)
-                .attr('opacity', 0.5)
-                .attr('mix-blend-mode', 'overlay');
-            shapeGroup.add(textureLayer);
+        } else if (textureEnabled) {
+            // Cor sólida COM textura
+            applyColorToShape(shape, layerColorA, i, {
+                enabled: true,
+                scale: textureScale,
+                intensity: textureIntensity,
+                octaves: textureOctaves,
+                seed: 12345, // Seed fixo para textura consistente
+                patternSize: textureSize // Tamanho baseado na forma maior
+            });
         } else {
             // Cor sólida SEM textura
             shape.attr('fill', layerColorA);
@@ -342,7 +311,8 @@ function applyColorToShape(shape, color, layerIndex, noiseOptions = null) {
             scale: noiseOptions.scale,
             intensity: noiseOptions.intensity,
             octaves: noiseOptions.octaves,
-            seed: layerIndex * 123.456
+            seed: noiseOptions.seed !== undefined ? noiseOptions.seed : (layerIndex * 123.456),
+            patternSize: noiseOptions.patternSize
         });
 
         // Criar pattern SVG com configuração correta
