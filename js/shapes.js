@@ -143,7 +143,7 @@ function generateShapes(params) {
                 intensity: textureIntensity,
                 octaves: textureOctaves,
                 seed: 12345, // Seed fixo para textura consistente
-                patternSize: textureSize // Tamanho baseado na forma maior
+                patternSize: 500 // Mesmo tamanho que o gradiente para comportamento idêntico
             });
         } else {
             // Cor sólida SEM textura
