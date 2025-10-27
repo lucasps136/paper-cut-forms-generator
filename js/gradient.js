@@ -3,6 +3,109 @@
  * Gera gradientes distorcidos e orgânicos usando ruído Simplex
  */
 
+// Padrão de distorção global (criado uma vez e reutilizado)
+let globalDistortionPattern = null;
+let globalDistortionPatternId = 'global-distortion-pattern';
+
+/**
+ * Cria UM padrão de distorção em escala de cinza para reutilizar em todos os gradientes
+ * @param {object} options - Opções de ruído
+ * @returns {object} Dados do padrão de distorção
+ */
+function createDistortionPattern(options = {}) {
+    const {
+        intensity = 50,
+        scale = 50,
+        octaves = 3,
+        seed = 12345 // Seed fixo para consistência
+    } = options;
+
+    const patternSize = 256; // Tamanho otimizado
+    const simplex = new SimplexNoise(seed);
+
+    // Criar canvas temporário
+    const canvas = document.createElement('canvas');
+    canvas.width = patternSize;
+    canvas.height = patternSize;
+    const ctx = canvas.getContext('2d');
+
+    const imageData = ctx.createImageData(patternSize, patternSize);
+    const data = imageData.data;
+
+    const centerX = patternSize / 2;
+    const centerY = patternSize / 2;
+    const maxRadius = patternSize / 2;
+
+    for (let y = 0; y < patternSize; y++) {
+        for (let x = 0; x < patternSize; x++) {
+            const idx = (y * patternSize + x) * 4;
+
+            // Calcular distância do centro (para gradiente radial)
+            const dx = x - centerX;
+            const dy = y - centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const normalizedDistance = Math.min(1, distance / maxRadius);
+
+            // Gerar ruído fractal
+            let noiseValue = 0;
+            let amplitude = 1;
+            let frequency = 1;
+            let maxValue = 0;
+
+            for (let o = 0; o < octaves; o++) {
+                const sampleX = (x / scale) * frequency;
+                const sampleY = (y / scale) * frequency;
+                noiseValue += simplex.noise(sampleX, sampleY) * amplitude;
+                maxValue += amplitude;
+                amplitude *= 0.5;
+                frequency *= 2;
+            }
+
+            // Normalizar ruído para 0-1
+            noiseValue = (noiseValue / maxValue + 1) / 2;
+
+            // Combinar distância radial com ruído para distorção do gradiente
+            const distortionAmount = (intensity / 100) * 0.6;
+            let t = normalizedDistance + (noiseValue - 0.5) * distortionAmount;
+            t = Math.max(0, Math.min(1, t));
+
+            // Criar padrão em escala de cinza (0-255)
+            const gray = Math.round(t * 255);
+
+            data[idx] = gray;
+            data[idx + 1] = gray;
+            data[idx + 2] = gray;
+            data[idx + 3] = 255;
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    const dataUrl = canvas.toDataURL('image/png');
+
+    return {
+        id: globalDistortionPatternId,
+        dataUrl: dataUrl,
+        size: patternSize
+    };
+}
+
+/**
+ * Obtém ou cria o padrão de distorção global
+ */
+function getDistortionPattern(options) {
+    if (!globalDistortionPattern) {
+        globalDistortionPattern = createDistortionPattern(options);
+    }
+    return globalDistortionPattern;
+}
+
+/**
+ * Limpa o padrão de distorção global (quando mudar configurações)
+ */
+function clearDistortionPattern() {
+    globalDistortionPattern = null;
+}
+
 /**
  * Cria um gradiente radial distorcido para uma forma
  * @param {string} id - ID único para o gradiente
@@ -132,7 +235,73 @@ function applyDistortedGradient(svg, shape, gradientData, bounds = null) {
 }
 
 /**
- * Cria um gradiente com padrão de ruído para textura orgânica
+ * Aplica gradiente SVG nativo com padrão de distorção (OTIMIZADO)
+ * @param {object} svg - Instância SVG.js
+ * @param {object} shape - Elemento SVG da forma
+ * @param {string} color1 - Cor inicial
+ * @param {string} color2 - Cor final
+ * @param {number} layerIndex - Índice da camada
+ * @param {object} options - Opções de distorção
+ */
+function applyOptimizedGradient(svg, shape, color1, color2, layerIndex, options = {}) {
+    // 1. Obter/criar padrão de distorção global (feito UMA VEZ)
+    const distortionPattern = getDistortionPattern(options);
+
+    // 2. Verificar se o padrão de distorção já foi adicionado ao SVG
+    let existingPattern = svg.defs().findOne(`#${distortionPattern.id}`);
+    if (!existingPattern) {
+        // Adicionar padrão de distorção ao defs
+        const pattern = svg.defs()
+            .pattern(distortionPattern.size, distortionPattern.size)
+            .attr('id', distortionPattern.id)
+            .attr('patternUnits', 'userSpaceOnUse')
+            .attr('patternContentUnits', 'userSpaceOnUse')
+            .attr('x', 0)
+            .attr('y', 0);
+
+        pattern.image(distortionPattern.dataUrl)
+            .size(distortionPattern.size, distortionPattern.size)
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('preserveAspectRatio', 'none');
+    }
+
+    // 3. Criar gradiente SVG nativo radial (super leve!)
+    const gradientId = `optimized-gradient-${layerIndex}`;
+    const existingGradient = svg.defs().findOne(`#${gradientId}`);
+    if (existingGradient) {
+        existingGradient.remove();
+    }
+
+    const gradient = svg.defs().gradient('radial', (add) => {
+        add.stop(0, color1);
+        add.stop(1, color2);
+    });
+    gradient.attr({
+        id: gradientId,
+        cx: '50%',
+        cy: '50%',
+        r: '50%'
+    });
+
+    // 4. Aplicar gradiente à forma
+    shape.attr('fill', `url(#${gradientId})`);
+
+    // 5. Aplicar padrão de distorção como overlay com mix-blend-mode
+    // Criar uma cópia da forma com o padrão de distorção
+    const bbox = shape.bbox();
+    const maskRect = svg.rect(bbox.width, bbox.height)
+        .move(bbox.x, bbox.y)
+        .attr('fill', `url(#${distortionPattern.id})`)
+        .attr('opacity', 0.3)
+        .attr('style', 'mix-blend-mode: overlay; pointer-events: none;');
+
+    // Adicionar máscara ao mesmo grupo que a forma
+    shape.parent().add(maskRect);
+}
+
+/**
+ * Cria um gradiente com padrão de ruído para textura orgânica (LEGACY - PESADO)
  * @param {string} id - ID único para o padrão
  * @param {string} color1 - Cor inicial
  * @param {string} color2 - Cor final

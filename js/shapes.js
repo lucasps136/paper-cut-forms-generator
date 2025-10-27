@@ -26,6 +26,11 @@ function initSVG() {
         .viewbox(0, 0, SVG_WIDTH, SVG_HEIGHT)
         .addTo('#canvas-wrapper')
         .attr('id', 'chaos-svg');
+
+    // Limpar padrão de distorção global para permitir regeneração com novos parâmetros
+    if (typeof clearDistortionPattern === 'function') {
+        clearDistortionPattern();
+    }
 }
 
 /**
@@ -121,21 +126,19 @@ function generateShapes(params) {
 
         // Aplicar cor: gradiente OU cor sólida com textura (mutuamente exclusivos)
         if (gradientEnabled) {
-            // Gradiente distorcido já tem sua própria textura através do ruído
-            const patternId = `noise-gradient-${i}`;
-            const patternData = createNoiseGradientPattern(
-                patternId,
+            // Gradiente otimizado: usa gradiente SVG nativo + padrão de distorção reutilizável
+            applyOptimizedGradient(
+                svg,
+                shape,
                 layerColorA,
                 layerColorB,
                 i,
                 {
                     intensity: gradientIntensity,
                     scale: gradientScale,
-                    octaves: gradientOctaves,
-                    seed: i * 789.123
+                    octaves: gradientOctaves
                 }
             );
-            applyNoiseGradientPattern(svg, shape, patternId, patternData);
         } else if (noiseEnabled) {
             // Cor sólida com textura de ruído
             applyColorToShape(shape, layerColor, i, {
