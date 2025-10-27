@@ -48,7 +48,8 @@ function distortCircle(shape, chaosX, chaosY, rand1, rand2) {
 
     // Criar path circular com distorção
     const points = [];
-    const numPoints = 64;
+    // Reduzido de 64 para 32 pontos - mantém qualidade visual mas melhora performance
+    const numPoints = 32;
 
     for (let i = 0; i < numPoints; i++) {
         const angle = (i / numPoints) * Math.PI * 2;

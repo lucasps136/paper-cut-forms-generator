@@ -3,6 +3,30 @@
  * Gera gradientes distorcidos e orgânicos usando ruído Simplex
  */
 
+// Cache global para padrões de gradiente com ruído
+const gradientPatternCache = new Map();
+const MAX_GRADIENT_CACHE_SIZE = 10;
+
+/**
+ * Limpa o cache de padrões de gradiente
+ */
+function clearGradientPatternCache() {
+    gradientPatternCache.clear();
+}
+
+/**
+ * Gera chave de cache para gradientes com ruído
+ */
+function getGradientPatternCacheKey(color1, color2, options) {
+    const { intensity, scale, octaves } = options;
+    // Agrupa parâmetros similares
+    const color1Bucket = color1.substring(0, 4);
+    const color2Bucket = color2.substring(0, 4);
+    const intensityBucket = Math.round(intensity / 10) * 10;
+    const scaleBucket = Math.round(scale / 10) * 10;
+    return `${color1Bucket}-${color2Bucket}-${intensityBucket}-${scaleBucket}-${octaves}`;
+}
+
 /**
  * Cria um gradiente radial distorcido para uma forma
  * @param {string} id - ID único para o gradiente
@@ -149,7 +173,20 @@ function createNoiseGradientPattern(id, color1, color2, layerIndex, options = {}
         gradientComplexity = 5
     } = options;
 
-    const patternSize = 400; // Tamanho maior para mais detalhes
+    // Verificar cache primeiro
+    const cacheKey = getGradientPatternCacheKey(color1, color2, { intensity, scale, octaves });
+
+    if (gradientPatternCache.has(cacheKey)) {
+        const cached = gradientPatternCache.get(cacheKey);
+        return {
+            id: id,
+            dataUrl: cached.dataUrl,
+            size: cached.size
+        };
+    }
+
+    // Reduzido de 400 para 200 para melhor performance (mesma resolução que noise pattern)
+    const patternSize = 200;
     const simplex = new SimplexNoise(seed + layerIndex * 234.567);
 
     // Criar canvas temporário
@@ -213,11 +250,20 @@ function createNoiseGradientPattern(id, color1, color2, layerIndex, options = {}
 
     const dataUrl = canvas.toDataURL('image/png');
 
-    return {
+    const result = {
         id: id,
         dataUrl: dataUrl,
         size: patternSize
     };
+
+    // Adicionar ao cache
+    if (gradientPatternCache.size >= MAX_GRADIENT_CACHE_SIZE) {
+        const firstKey = gradientPatternCache.keys().next().value;
+        gradientPatternCache.delete(firstKey);
+    }
+    gradientPatternCache.set(cacheKey, result);
+
+    return result;
 }
 
 /**

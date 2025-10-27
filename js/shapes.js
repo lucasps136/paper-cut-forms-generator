@@ -15,6 +15,37 @@ const SHAPE_PATHS = {
 
 let svg;
 
+// Cache de filtros SVG para reutilização entre camadas
+const filterCache = new Map();
+
+/**
+ * Gera ID de filtro compartilhado baseado em parâmetros (agrupa valores similares)
+ */
+function getSharedFilterId(blurAmount, offsetX, offsetY, opacity, color) {
+    // Arredondar valores para agrupar filtros similares
+    const blurBucket = Math.round(blurAmount * 2) / 2; // Agrupa em 0.5 incrementos
+    const offsetXBucket = Math.round(offsetX);
+    const offsetYBucket = Math.round(offsetY);
+    const opacityBucket = Math.round(opacity * 10) / 10;
+    return `shared-shadow-${blurBucket}-${offsetXBucket}-${offsetYBucket}-${opacityBucket}-${color.replace('#', '')}`;
+}
+
+/**
+ * Limpa todos os caches de performance
+ */
+function clearAllPerformanceCaches() {
+    // Limpar cache de filtros
+    filterCache.clear();
+
+    // Limpar caches de noise e gradient se as funções existirem
+    if (typeof clearNoisePatternCache === 'function') {
+        clearNoisePatternCache();
+    }
+    if (typeof clearGradientPatternCache === 'function') {
+        clearGradientPatternCache();
+    }
+}
+
 /**
  * Inicializa o canvas SVG
  */
@@ -26,6 +57,10 @@ function initSVG() {
         .viewbox(0, 0, SVG_WIDTH, SVG_HEIGHT)
         .addTo('#canvas-wrapper')
         .attr('id', 'chaos-svg');
+
+    // Limpar cache de filtros ao reinicializar
+    // Nota: Não limpar caches de noise/gradient aqui pois são reutilizáveis entre gerações
+    filterCache.clear();
 }
 
 /**
@@ -151,8 +186,6 @@ function generateShapes(params) {
 
         // Aplicar inner shadow DEPOIS do fill
         if (shadowEnabled && shadowBlur > 0) {
-            const filterId = `inner-shadow-${i}`;
-
             // Calcular valores progressivos de blur e offset
             // shadowSize controla o multiplicador final (ex: 2 = vai de 0.5x a 2x)
             const minMultiplier = 0.5;
@@ -164,11 +197,17 @@ function generateShapes(params) {
             const offsetYAmount = shadowOffsetY * shadowProgress;
             const opacityAmount = 0.7; // Opacidade fixa em 70%
 
-            // Criar filtro de inner shadow com valores progressivos
-            createInnerShadowFilter(filterId, blurAmount, offsetXAmount, offsetYAmount, opacityAmount, shadowColor);
+            // Usar filtro compartilhado baseado em parâmetros agrupados
+            const sharedFilterId = getSharedFilterId(blurAmount, offsetXAmount, offsetYAmount, opacityAmount, shadowColor);
 
-            // Aplicar filtro à forma
-            shape.attr('filter', `url(#${filterId})`);
+            // Criar filtro apenas se ainda não existe
+            if (!filterCache.has(sharedFilterId)) {
+                createInnerShadowFilter(sharedFilterId, blurAmount, offsetXAmount, offsetYAmount, opacityAmount, shadowColor);
+                filterCache.set(sharedFilterId, true);
+            }
+
+            // Aplicar filtro compartilhado à forma
+            shape.attr('filter', `url(#${sharedFilterId})`);
         }
 
         // Armazenar metadados para criar clips após distorção
@@ -356,10 +395,10 @@ function reapplyClipsAfterDistortion(svgEl, shapeMetadata, frequency) {
     const defs = svgEl.querySelector('defs');
     if (!mainGroup || !defs) return;
 
-    // Margem visual: clips serão 85% do tamanho da forma (15% menor)
-    // Recorta agressivamente as FILHAS para evitar que pontas ultrapassem os PAIS
-    // Deixa 15% de borda visível nos PAIS criando efeito de profundidade
-    const clipScaleFactor = 0.85;
+    // Margem visual otimizada: clips serão 90% do tamanho da forma (10% menor)
+    // Reduzido de 0.85 para 0.90 para melhor performance (menos recorte = menos processamento)
+    // Ainda mantém contenção visual mas com menos overhead de clipping
+    const clipScaleFactor = 0.90;
 
     // 1. Criar clip-path GLOBAL baseado na forma MAIOR (já distorcida)
     const largestShape = allShapes[0];
