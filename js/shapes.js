@@ -125,10 +125,21 @@ function generateShapes(params) {
 
         // Aplicar cor base: gradiente OU cor sólida
         if (gradientEnabled) {
-            // Gradiente vetorial (sempre limpo, sem textura embutida)
+            // Gradiente vetorial distorcido (sem textura embutida)
             const gradientId = `gradient-${i}`;
-            createPureGradient(svg, gradientId, layerColorA, layerColorB);
-            shape.attr('fill', `url(#${gradientId})`);
+            const gradientData = createDistortedGradient(
+                gradientId,
+                layerColorA,
+                layerColorB,
+                i,
+                {
+                    intensity: 50,  // Intensidade da distorção do gradiente
+                    complexity: 5,   // Número de color stops
+                    seed: 12345,     // Seed fixo para consistência
+                    type: 'radial'
+                }
+            );
+            applyDistortedGradient(svg, shape, gradientData);
         } else {
             // Cor sólida
             shape.attr('fill', layerColorA);
