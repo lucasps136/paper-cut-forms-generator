@@ -39,10 +39,10 @@ const CONFIG = {
     },
     // Outras configurações de sliders
     frequency: {
-        min: 2,
-        max: 40,
-        randomMin: 15,
-        randomMax: 35
+        min: 3,
+        max: 20,
+        randomMin: 8,
+        randomMax: 15
     },
     scale: {
         min: 10,
