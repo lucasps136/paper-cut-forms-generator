@@ -29,12 +29,14 @@ function createVectorTextureFilter(svg, filterId, options = {}) {
     }
 
     // Converter escala para baseFrequency (inversamente proporcional)
-    // scale 20 (máximo zoom) → baseFrequency ~1.0
-    // scale 200 (mínimo zoom) → baseFrequency ~0.1
-    const baseFrequency = (1 / scale) * 20;
+    // Para textura de papel: frequências muito baixas (0.01-0.05)
+    // scale 20 (máximo zoom) → baseFrequency ~0.05
+    // scale 200 (mínimo zoom) → baseFrequency ~0.005
+    const baseFrequency = (1 / scale) * 1.0;
 
-    // Converter intensidade para slope (0-100 → 0-0.3)
-    const slope = (intensity / 100) * 0.3;
+    // Converter intensidade para slope (0-100 → 0-0.15)
+    // Textura de papel é muito sutil
+    const slope = (intensity / 100) * 0.15;
     const intercept = 0.5 - (slope * 0.5); // Centralizar em 0.5
 
     // Criar filtro
@@ -56,15 +58,22 @@ function createVectorTextureFilter(svg, filterId, options = {}) {
         result: 'turbulence'
     });
 
-    // 2. Converter para escala de cinza
-    filter.element('feColorMatrix').attr({
+    // 2. Suavizar a textura para parecer papel (não ruído digital duro)
+    filter.element('feGaussianBlur').attr({
         in: 'turbulence',
+        stdDeviation: '0.5',
+        result: 'blurred'
+    });
+
+    // 3. Converter para escala de cinza
+    filter.element('feColorMatrix').attr({
+        in: 'blurred',
         type: 'saturate',
         values: '0',
         result: 'grayscale'
     });
 
-    // 3. Ajustar intensidade
+    // 4. Ajustar intensidade
     const componentTransfer = filter.element('feComponentTransfer');
     componentTransfer.attr({
         in: 'grayscale',
@@ -79,7 +88,7 @@ function createVectorTextureFilter(svg, filterId, options = {}) {
         });
     });
 
-    // 4. Misturar com a forma original
+    // 5. Misturar com a forma original
     filter.element('feBlend').attr({
         in: 'SourceGraphic',
         in2: 'adjusted',
@@ -87,7 +96,7 @@ function createVectorTextureFilter(svg, filterId, options = {}) {
         result: 'blended'
     });
 
-    // 5. Usar alpha da forma original para recortar a textura
+    // 6. Usar alpha da forma original para recortar a textura
     filter.element('feComposite').attr({
         in: 'blended',
         in2: 'SourceGraphic',
