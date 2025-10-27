@@ -3,29 +3,6 @@
  * Gera texturas de ruído procedural inspiradas no nnnoise
  */
 
-// Cache global para padrões de ruído (reduz criação de múltiplos canvas)
-const noisePatternCache = new Map();
-const MAX_CACHE_SIZE = 50; // Aumentado para suportar até 40 camadas únicas
-
-/**
- * Limpa o cache de padrões de ruído
- */
-function clearNoisePatternCache() {
-    noisePatternCache.clear();
-}
-
-/**
- * Gera chave de cache baseada nos parâmetros de ruído
- */
-function getNoisePatternCacheKey(baseColor, options) {
-    const { scale, intensity, octaves } = options;
-    // Usar cor completa para evitar que camadas diferentes usem mesma textura
-    // Cache ainda funciona quando gerar múltiplas vezes com mesmas configurações
-    const scaleBucket = Math.round(scale / 10) * 10;
-    const intensityBucket = Math.round(intensity / 10) * 10;
-    return `${baseColor}-${scaleBucket}-${intensityBucket}-${octaves}`;
-}
-
 /**
  * Gerador de ruído Simplex 2D
  * Baseado no algoritmo de Ken Perlin
@@ -133,19 +110,6 @@ function createNoisePattern(id, baseColor, options = {}) {
         seed = Math.random() * 1000
     } = options;
 
-    // Verificar cache primeiro
-    const cacheKey = getNoisePatternCacheKey(baseColor, { scale, intensity, octaves });
-
-    if (noisePatternCache.has(cacheKey)) {
-        const cached = noisePatternCache.get(cacheKey);
-        // Retornar cópia com ID único mas mesmo dataUrl
-        return {
-            id: id,
-            dataUrl: cached.dataUrl,
-            size: cached.size
-        };
-    }
-
     // Pattern size conservador para melhor performance
     const patternSize = 200;
     const simplex = new SimplexNoise(seed);
@@ -201,21 +165,11 @@ function createNoisePattern(id, baseColor, options = {}) {
     // Converter canvas para data URL
     const dataUrl = canvas.toDataURL('image/png');
 
-    const result = {
+    return {
         id: id,
         dataUrl: dataUrl,
         size: patternSize
     };
-
-    // Adicionar ao cache (limitar tamanho do cache)
-    if (noisePatternCache.size >= MAX_CACHE_SIZE) {
-        // Remover primeiro item (FIFO)
-        const firstKey = noisePatternCache.keys().next().value;
-        noisePatternCache.delete(firstKey);
-    }
-    noisePatternCache.set(cacheKey, result);
-
-    return result;
 }
 
 /**

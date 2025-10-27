@@ -31,22 +31,6 @@ function getSharedFilterId(blurAmount, offsetX, offsetY, opacity, color) {
 }
 
 /**
- * Limpa todos os caches de performance
- */
-function clearAllPerformanceCaches() {
-    // Limpar cache de filtros
-    filterCache.clear();
-
-    // Limpar caches de noise e gradient se as funções existirem
-    if (typeof clearNoisePatternCache === 'function') {
-        clearNoisePatternCache();
-    }
-    if (typeof clearGradientPatternCache === 'function') {
-        clearGradientPatternCache();
-    }
-}
-
-/**
  * Inicializa o canvas SVG
  */
 function initSVG() {
@@ -59,7 +43,6 @@ function initSVG() {
         .attr('id', 'chaos-svg');
 
     // Limpar cache de filtros ao reinicializar
-    // Nota: Não limpar caches de noise/gradient aqui pois são reutilizáveis entre gerações
     filterCache.clear();
 }
 
@@ -457,7 +440,13 @@ function reapplyClipsAfterDistortion(svgEl, shapeMetadata, frequency) {
     const globalClipGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     globalClipGroup.setAttribute('clip-path', `url(#${globalClipId})`);
 
-    // 4. Para cada forma (exceto a MAIOR), criar grupo individual com clip
+    // 4. Adicionar a primeira forma (maior) diretamente ao grupo global SEM clip
+    if (allShapes[0] && allShapes[0].parentNode === mainGroup) {
+        allShapes[0].removeAttribute('clip-path');
+        globalClipGroup.appendChild(allShapes[0]);
+    }
+
+    // 5. Para cada forma subsequente, criar grupo individual com clip
     for (let i = 1; i < allShapes.length; i++) {
         const shape = allShapes[i];
         const prevMeta = shapeMetadata[i - 1]; // Metadados da forma ANTERIOR (maior que esta)
@@ -476,7 +465,7 @@ function reapplyClipsAfterDistortion(svgEl, shapeMetadata, frequency) {
         }
     }
 
-    // 5. Adicionar grupo global ao mainGroup
+    // 6. Adicionar grupo global ao mainGroup
     mainGroup.appendChild(globalClipGroup);
 }
 

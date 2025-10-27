@@ -8,7 +8,7 @@ Quando todos os efeitos estavam habilitados (gradientes com ruído, texturas de 
 
 ### Principais Gargalos Encontrados:
 
-1. **Canvas para cada camada**: Criação de 200x200 ou 400x400 canvas para CADA camada
+1. **Canvas grande para gradientes**: Canvas de 400x400 para CADA camada
    - Com 40 camadas e gradientes: 40 canvas de 400x400 = 6.4 milhões de pixels processados
    - Cada pixel com cálculos de ruído multi-octave
 
@@ -23,37 +23,9 @@ Quando todos os efeitos estavam habilitados (gradientes com ruído, texturas de 
 
 ## Otimizações Implementadas
 
-### 1. Cache de Padrões de Ruído (noise.js)
+**NOTA**: Tentativas de cache de padrões foram removidas pois causavam problemas de geração de camadas únicas.
 
-**Antes:**
-```javascript
-// Criava um novo canvas 200x200 para CADA camada
-function createNoisePattern(id, baseColor, options) {
-    const canvas = document.createElement('canvas');
-    // ... geração pixel-a-pixel
-}
-```
-
-**Depois:**
-```javascript
-// Cache global que reutiliza padrões similares
-const noisePatternCache = new Map();
-
-function createNoisePattern(id, baseColor, options) {
-    const cacheKey = getNoisePatternCacheKey(baseColor, options);
-    if (noisePatternCache.has(cacheKey)) {
-        return cached; // Retorna dataUrl existente
-    }
-    // ... cria apenas se não existir no cache
-}
-```
-
-**Benefícios:**
-- Reduz criação de canvas de ~40 para ~5-10 (dependendo da variedade de cores)
-- Economia de ~75% na geração de texturas de ruído
-- Hit rate do cache: ~60-80% em gerações típicas
-
-### 2. Cache de Gradientes com Ruído (gradient.js)
+### 1. Redução de Canvas para Gradientes (gradient.js)
 
 **Antes:**
 ```javascript
@@ -63,15 +35,14 @@ const patternSize = 400; // Canvas grande para cada camada
 **Depois:**
 ```javascript
 const patternSize = 200; // Reduzido 50%
-const gradientPatternCache = new Map(); // + cache similar ao noise
 ```
 
 **Benefícios:**
 - Redução de 75% no número de pixels processados (400x400 → 200x200)
-- Cache adicional reduz criação de canvas duplicados
 - Qualidade visual mantida (200x200 é suficiente para padrões tiled)
+- Reduz uso de memória e processamento
 
-### 3. Redução de Pontos em Círculos (warp.js)
+### 2. Redução de Pontos em Círculos (warp.js)
 
 **Antes:**
 ```javascript
@@ -88,7 +59,7 @@ const numPoints = 32; // 50% menos pontos
 - 50% menos coordenadas em paths SVG
 - Qualidade visual praticamente idêntica (32 pontos é mais que suficiente)
 
-### 4. Compartilhamento de Filtros SVG (shapes.js)
+### 3. Compartilhamento de Filtros SVG (shapes.js)
 
 **Antes:**
 ```javascript
@@ -112,7 +83,7 @@ if (!filterCache.has(sharedFilterId)) {
 - Menos elementos `<filter>` no DOM
 - feGaussianBlur reutilizado entre múltiplas shapes
 
-### 5. ClipPaths Otimizados (shapes.js)
+### 4. ClipPaths Otimizados (shapes.js)
 
 **Antes:**
 ```javascript
@@ -129,52 +100,47 @@ const clipScaleFactor = 0.90; // 10% de recorte
 - Ainda mantém contenção visual adequada
 - ~33% menos overhead de clipping
 
-### 6. Funções de Limpeza de Cache
+### 5. Correção da Ordem de Renderização (shapes.js)
 
-Adicionadas funções para gerenciar memória:
+**Problema:**
 ```javascript
-// noise.js
-function clearNoisePatternCache()
-
-// gradient.js
-function clearGradientPatternCache()
-
-// shapes.js
-function clearAllPerformanceCaches()
+// A primeira forma (maior) não era movida para globalClipGroup
+for (let i = 1; i < allShapes.length; i++) { // Pulava index 0!
 ```
+
+**Correção:**
+```javascript
+// Adicionar primeira forma explicitamente
+if (allShapes[0] && allShapes[0].parentNode === mainGroup) {
+    globalClipGroup.appendChild(allShapes[0]);
+}
+```
+
+**Benefícios:**
+- Todas as camadas agora ficam visíveis na ordem correta
+- Primeira camada (maior) não cobre as outras
 
 ## Resultados Esperados
 
 ### Cenário Típico (frequency=30, todos efeitos habilitados):
 
 **Antes das otimizações:**
-- ~30 canvas de 200x200 (noise)
 - ~30 canvas de 400x400 (gradiente)
 - ~30 filtros SVG únicos
 - Círculos com 64 pontos cada
-- **Total: ~5.5 milhões de pixels processados + 30 filtros + cálculos de 64 pontos**
+- **Total: ~4.8 milhões de pixels processados + 30 filtros + cálculos de 64 pontos**
 
 **Depois das otimizações:**
-- ~5-8 canvas de 200x200 (noise com cache)
-- ~5-8 canvas de 200x200 (gradiente com cache + redução de tamanho)
+- ~30 canvas de 200x200 (gradiente reduzido)
 - ~8-12 filtros SVG compartilhados
 - Círculos com 32 pontos cada
-- **Total: ~0.4-0.8 milhões de pixels processados + 8-12 filtros + cálculos de 32 pontos**
+- **Total: ~1.2 milhões de pixels processados + 8-12 filtros + cálculos de 32 pontos**
 
 ### Melhoria Estimada:
-- **~85-90% redução em processamento de canvas**
+- **~75% redução em processamento de canvas de gradiente**
 - **~60-70% redução em filtros SVG**
 - **~50% redução em complexidade de paths**
-- **Performance geral: ~3-5x mais rápido na geração**
-
-## Limitações dos Caches
-
-Os caches têm tamanhos limitados para evitar uso excessivo de memória:
-- `MAX_CACHE_SIZE = 10` (noise patterns)
-- `MAX_GRADIENT_CACHE_SIZE = 10` (gradient patterns)
-- Política FIFO (First In, First Out) para remoção
-
-Isso garante que mesmo com uso prolongado, a memória não crescerá indefinidamente.
+- **Performance geral: ~2-3x mais rápido na geração**
 
 ## Compatibilidade
 
@@ -184,35 +150,23 @@ Todas as otimizações são transparentes para o usuário:
 - **Mesma interface** de controles
 - **Nenhuma mudança** no SVG exportado (exceto IDs internos)
 
-## Notas Técnicas
+## O Que NÃO Funcionou
 
-### Agrupamento de Parâmetros (Bucketing)
+### Cache de Padrões (REMOVIDO)
 
-Os caches usam "bucketing" para aumentar hit rate:
-```javascript
-// Cores similares compartilham cache
-const colorBucket = baseColor.substring(0, 4);
+Inicialmente tentamos implementar cache de padrões de ruído e gradiente para reutilizar texturas entre camadas. **Isso causou problemas severos**:
 
-// Valores próximos compartilham cache
-const scaleBucket = Math.round(scale / 10) * 10;
-```
+- Todas as camadas ficavam com a mesma textura
+- Em alguns casos, apenas uma forma era gerada
+- O bucketing de cores agrupava cores diferentes incorretamente
 
-Isso significa que scale=52 e scale=58 usarão o mesmo cache (bucket=50), aumentando reutilização.
-
-### Data URLs Compartilhadas
-
-As texturas de ruído e gradiente são codificadas como data URLs PNG:
-- Múltiplas shapes podem referenciar a mesma data URL
-- Browser pode otimizar decodificação interna
-- Reduz tamanho do SVG final exportado
+**Conclusão**: Cada camada precisa ter sua própria textura única gerada com seed específica. Cache não é viável para este caso de uso.
 
 ## Monitoramento de Performance
 
-Para verificar os benefícios do cache, adicione ao console:
+Para verificar o uso de filtros compartilhados, adicione ao console:
 ```javascript
-console.log('Noise cache size:', noisePatternCache.size);
-console.log('Gradient cache size:', gradientPatternCache.size);
 console.log('Filter cache size:', filterCache.size);
 ```
 
-Hit rates altos (cache preenchido rapidamente e mantido) indicam boa reutilização.
+Valores entre 5-15 indicam bom compartilhamento de filtros.
