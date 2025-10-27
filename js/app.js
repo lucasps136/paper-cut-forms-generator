@@ -255,14 +255,19 @@ function initEventListeners() {
         controls[id].addEventListener('input', updateValues);
     });
 
-    // Atualizar visibilidade das cores B quando gradiente mudar
+    // Garantir que gradiente e ruído sejam mutuamente exclusivos
     controls.gradientEnabled.addEventListener('change', function() {
+        if (this.checked) {
+            controls.noiseEnabled.checked = false;
+        }
         updateColorBVisibility();
         generate();
     });
 
-    // Regenerar quando ruído mudar (agora pode combinar com gradiente)
     controls.noiseEnabled.addEventListener('change', function() {
+        if (this.checked) {
+            controls.gradientEnabled.checked = false;
+        }
         generate();
     });
 
