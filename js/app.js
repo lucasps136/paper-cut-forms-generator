@@ -15,19 +15,19 @@ const CONFIG = {
         randomMin: 5,
         randomMax: 30
     },
-    // Configurações de textura
-    texture: {
+    // Configurações de ruído
+    noise: {
         intensity: {
             min: 0,
-            max: 100,
-            randomMin: 30,
-            randomMax: 70
+            max: 20,
+            randomMin: 5,
+            randomMax: 15
         },
         scale: {
-            min: 20,
-            max: 200,
-            randomMin: 50,
-            randomMax: 120
+            min: 10,
+            max: 150,
+            randomMin: 30,
+            randomMax: 100
         },
         octaves: {
             min: 1,
@@ -78,7 +78,7 @@ const CONFIG = {
     },
     // Probabilidades
     probability: {
-        textureEnabled: 0.7,  // 70% de chance
+        noiseEnabled: 0.7,  // 70% de chance
         shadowEnabled: 0.7  // 70% de chance
     }
 };
@@ -95,17 +95,18 @@ const controls = {};
 function initControlsCache() {
     const controlIds = [
         'shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate',
-        'color1A', 'color1B', 'color2A', 'color2B', 'textureEnabled', 'textureIntensity',
-        'textureScale', 'textureOctaves', 'shadowEnabled', 'shadowOffsetX',
+        'color1A', 'color1B', 'color2A', 'color2B', 'noiseEnabled', 'noiseIntensity',
+        'noiseScale', 'noiseOctaves', 'shadowEnabled', 'shadowOffsetX',
         'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor',
-        'gradientEnabled'
+        'gradientEnabled', 'gradientIntensity', 'gradientScale', 'gradientOctaves'
     ];
 
     const valueDisplayIds = [
         'frequencyValue', 'scaleValue', 'chaosYValue', 'chaosXValue',
-        'rotateValue', 'textureIntensityValue', 'textureScaleValue',
-        'textureOctavesValue', 'shadowOffsetXValue', 'shadowOffsetYValue',
-        'shadowBlurValue', 'shadowSizeValue'
+        'rotateValue', 'noiseIntensityValue', 'noiseScaleValue',
+        'noiseOctavesValue', 'shadowOffsetXValue', 'shadowOffsetYValue',
+        'shadowBlurValue', 'shadowSizeValue', 'gradientIntensityValue',
+        'gradientScaleValue', 'gradientOctavesValue'
     ];
 
     controlIds.forEach(id => {
@@ -152,17 +153,20 @@ function getControlValues() {
         color1B: controls.color1B.value,
         color2A: controls.color2A.value,
         color2B: controls.color2B.value,
-        textureEnabled: controls.textureEnabled.checked,
-        textureIntensity: parseInt(controls.textureIntensity.value),
-        textureScale: parseInt(controls.textureScale.value),
-        textureOctaves: parseInt(controls.textureOctaves.value),
+        noiseEnabled: controls.noiseEnabled.checked,
+        noiseIntensity: parseInt(controls.noiseIntensity.value),
+        noiseScale: parseInt(controls.noiseScale.value),
+        noiseOctaves: parseInt(controls.noiseOctaves.value),
         shadowEnabled: controls.shadowEnabled.checked,
         shadowOffsetX: parseFloat(controls.shadowOffsetX.value),
         shadowOffsetY: parseFloat(controls.shadowOffsetY.value),
         shadowBlur: parseFloat(controls.shadowBlur.value),
         shadowSize: parseFloat(controls.shadowSize.value),
         shadowColor: controls.shadowColor.value,
-        gradientEnabled: controls.gradientEnabled.checked
+        gradientEnabled: controls.gradientEnabled.checked,
+        gradientIntensity: parseInt(controls.gradientIntensity.value),
+        gradientScale: parseInt(controls.gradientScale.value),
+        gradientOctaves: parseInt(controls.gradientOctaves.value)
     };
 }
 
@@ -189,11 +193,11 @@ function randomize() {
     controls.chaosX.value = random(CONFIG.chaos.randomMin, CONFIG.chaos.randomMax);
     controls.rotate.value = random(CONFIG.rotation.randomMin, CONFIG.rotation.randomMax);
 
-    // Valores aleatórios para textura usando CONFIG
-    controls.textureEnabled.checked = Math.random() > (1 - CONFIG.probability.textureEnabled);
-    controls.textureIntensity.value = random(CONFIG.texture.intensity.randomMin, CONFIG.texture.intensity.randomMax);
-    controls.textureScale.value = random(CONFIG.texture.scale.randomMin, CONFIG.texture.scale.randomMax);
-    controls.textureOctaves.value = random(CONFIG.texture.octaves.randomMin, CONFIG.texture.octaves.randomMax);
+    // Valores aleatórios para ruído usando CONFIG
+    controls.noiseEnabled.checked = Math.random() > (1 - CONFIG.probability.noiseEnabled);
+    controls.noiseIntensity.value = random(CONFIG.noise.intensity.randomMin, CONFIG.noise.intensity.randomMax);
+    controls.noiseScale.value = random(CONFIG.noise.scale.randomMin, CONFIG.noise.scale.randomMax);
+    controls.noiseOctaves.value = random(CONFIG.noise.octaves.randomMin, CONFIG.noise.octaves.randomMax);
 
     // Valores aleatórios para inner shadow usando CONFIG
     controls.shadowEnabled.checked = Math.random() > (1 - CONFIG.probability.shadowEnabled);
@@ -229,13 +233,16 @@ function updateValues() {
     controls.chaosYValue.textContent = controls.chaosY.value;
     controls.chaosXValue.textContent = controls.chaosX.value;
     controls.rotateValue.textContent = controls.rotate.value;
-    controls.textureIntensityValue.textContent = controls.textureIntensity.value;
-    controls.textureScaleValue.textContent = controls.textureScale.value;
-    controls.textureOctavesValue.textContent = controls.textureOctaves.value;
+    controls.noiseIntensityValue.textContent = controls.noiseIntensity.value;
+    controls.noiseScaleValue.textContent = controls.noiseScale.value;
+    controls.noiseOctavesValue.textContent = controls.noiseOctaves.value;
     controls.shadowOffsetXValue.textContent = controls.shadowOffsetX.value;
     controls.shadowOffsetYValue.textContent = controls.shadowOffsetY.value;
     controls.shadowBlurValue.textContent = controls.shadowBlur.value;
     controls.shadowSizeValue.textContent = controls.shadowSize.value;
+    controls.gradientIntensityValue.textContent = controls.gradientIntensity.value;
+    controls.gradientScaleValue.textContent = controls.gradientScale.value;
+    controls.gradientOctavesValue.textContent = controls.gradientOctaves.value;
 }
 
 /**
@@ -243,26 +250,32 @@ function updateValues() {
  */
 function initEventListeners() {
     // Atualizar valores exibidos quando sliders mudarem
-    ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'textureIntensity', 'textureScale', 'textureOctaves',
-     'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize'].forEach(id => {
+    ['frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'noiseIntensity', 'noiseScale', 'noiseOctaves',
+     'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'gradientIntensity', 'gradientScale', 'gradientOctaves'].forEach(id => {
         controls[id].addEventListener('input', updateValues);
     });
 
-    // Gradiente controla visibilidade das cores B
+    // Garantir que gradiente e ruído sejam mutuamente exclusivos
     controls.gradientEnabled.addEventListener('change', function() {
+        if (this.checked) {
+            controls.noiseEnabled.checked = false;
+        }
         updateColorBVisibility();
         generate();
     });
 
-    // Textura funciona independentemente
-    controls.textureEnabled.addEventListener('change', function() {
+    controls.noiseEnabled.addEventListener('change', function() {
+        if (this.checked) {
+            controls.gradientEnabled.checked = false;
+        }
         generate();
     });
 
-    // Regenerar quando qualquer controle mudar (exceto gradientEnabled e textureEnabled que já têm listeners)
+    // Regenerar quando qualquer controle mudar (exceto gradientEnabled e noiseEnabled que já têm listeners)
     ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'color1A', 'color1B', 'color2A', 'color2B',
-     'textureIntensity', 'textureScale', 'textureOctaves',
-     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'].forEach(id => {
+     'noiseIntensity', 'noiseScale', 'noiseOctaves',
+     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor',
+     'gradientIntensity', 'gradientScale', 'gradientOctaves'].forEach(id => {
         controls[id].addEventListener('input', generate);
     });
 }

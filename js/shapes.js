@@ -41,17 +41,20 @@ function initSVG() {
  * @param {string} params.color1B - Segunda cor inicial (borda) em hex
  * @param {string} params.color2A - Primeira cor final (centro) em hex
  * @param {string} params.color2B - Segunda cor final (centro) em hex
- * @param {boolean} params.textureEnabled - Se deve aplicar textura
- * @param {number} params.textureIntensity - Intensidade da textura (0-100)
- * @param {number} params.textureScale - Escala da textura
- * @param {number} params.textureOctaves - Número de octaves da textura
+ * @param {boolean} params.noiseEnabled - Se deve aplicar textura de ruído
+ * @param {number} params.noiseIntensity - Intensidade do ruído (0-100)
+ * @param {number} params.noiseScale - Escala do ruído
+ * @param {number} params.noiseOctaves - Número de octaves do ruído
  * @param {boolean} params.shadowEnabled - Se deve aplicar inner shadow
  * @param {number} params.shadowOffsetX - Offset X da sombra
  * @param {number} params.shadowOffsetY - Offset Y da sombra
  * @param {number} params.shadowBlur - Blur final da sombra
  * @param {number} params.shadowSize - Tamanho final da sombra
  * @param {string} params.shadowColor - Cor da sombra em hex
- * @param {boolean} params.gradientEnabled - Se deve usar gradientes
+ * @param {boolean} params.gradientEnabled - Se deve usar gradientes distorcidos
+ * @param {number} params.gradientIntensity - Intensidade da distorção do gradiente
+ * @param {number} params.gradientScale - Escala do ruído do gradiente
+ * @param {number} params.gradientOctaves - Número de octaves do gradiente
  */
 function generateShapes(params) {
     const {
@@ -65,17 +68,20 @@ function generateShapes(params) {
         color1B,
         color2A,
         color2B,
-        textureEnabled = false,
-        textureIntensity = 50,
-        textureScale = 80,
-        textureOctaves = 4,
+        noiseEnabled = false,
+        noiseIntensity = 10,
+        noiseScale = 50,
+        noiseOctaves = 3,
         shadowEnabled = false,
         shadowOffsetX = 1,
         shadowOffsetY = 1,
         shadowBlur = 4,
         shadowSize = 2,
         shadowColor = '#000000',
-        gradientEnabled = false
+        gradientEnabled = false,
+        gradientIntensity = 50,
+        gradientScale = 80,
+        gradientOctaves = 4
     } = params;
 
     initSVG();
@@ -113,49 +119,34 @@ function generateShapes(params) {
             .attr('stroke', 'none')
             .attr('stroke-width', 0);
 
-        // Aplicar cor base: gradiente puro OU cor sólida
+        // Aplicar cor: gradiente OU cor sólida com textura (mutuamente exclusivos)
         if (gradientEnabled) {
-            // Gradiente puro entre cor A e cor B
-            const gradientId = `gradient-${i}`;
-            applyPureGradient(svg, shape, gradientId, layerColorA, layerColorB);
-        } else {
-            // Cor sólida (usa apenas cor A)
-            shape.attr('fill', layerColorA);
-        }
-
-        // Aplicar textura por cima como overlay (independente de ter gradiente ou não)
-        if (textureEnabled) {
-            const texturePatternId = `texture-pattern-${i}`;
-            const baseColor = gradientEnabled ? layerColorA : layerColorA; // Usa cor A como base para textura
-            const textureData = createNoisePattern(texturePatternId, baseColor, {
-                scale: textureScale,
-                intensity: textureIntensity,
-                octaves: textureOctaves,
-                seed: i * 456.789
+            // Gradiente distorcido já tem sua própria textura através do ruído
+            const patternId = `noise-gradient-${i}`;
+            const patternData = createNoiseGradientPattern(
+                patternId,
+                layerColorA,
+                layerColorB,
+                i,
+                {
+                    intensity: gradientIntensity,
+                    scale: gradientScale,
+                    octaves: gradientOctaves,
+                    seed: i * 789.123
+                }
+            );
+            applyNoiseGradientPattern(svg, shape, patternId, patternData);
+        } else if (noiseEnabled) {
+            // Cor sólida com textura de ruído
+            applyColorToShape(shape, layerColor, i, {
+                enabled: true,
+                scale: noiseScale,
+                intensity: noiseIntensity,
+                octaves: noiseOctaves
             });
-
-            // Criar pattern SVG para a textura
-            const existingPattern = svg.defs().findOne(`#${texturePatternId}`);
-            if (existingPattern) {
-                existingPattern.remove();
-            }
-
-            const texturePattern = svg.defs()
-                .pattern(textureData.size, textureData.size)
-                .attr('id', texturePatternId)
-                .attr('patternUnits', 'userSpaceOnUse');
-
-            texturePattern.image(textureData.dataUrl)
-                .size(textureData.size, textureData.size);
-
-            // Criar elemento de textura clonando a forma
-            const textureLayer = shape.clone();
-            textureLayer
-                .attr('fill', `url(#${texturePatternId})`)
-                .attr('opacity', 0.3)
-                .attr('mix-blend-mode', 'overlay');
-
-            shapeGroup.add(textureLayer);
+        } else {
+            // Apenas cor sólida
+            shape.attr('fill', layerColor);
         }
 
         // Aplicar inner shadow DEPOIS do fill

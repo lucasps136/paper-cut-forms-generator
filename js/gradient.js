@@ -288,37 +288,3 @@ function interpolateColorRGB(color1, color2, t) {
         b: Math.round(c1.b + (c2.b - c1.b) * t)
     };
 }
-
-/**
- * Aplica gradiente puro (sem textura) a uma forma
- * @param {object} svg - Instância SVG.js
- * @param {object} shape - Elemento SVG da forma
- * @param {string} gradientId - ID do gradiente
- * @param {string} color1 - Cor inicial em hex
- * @param {string} color2 - Cor final em hex
- */
-function applyPureGradient(svg, shape, gradientId, color1, color2) {
-    // Remover gradiente existente se já existe
-    const existingGradient = svg.defs().findOne(`#${gradientId}`);
-    if (existingGradient) {
-        existingGradient.remove();
-    }
-
-    // Criar gradiente radial simples
-    const gradient = svg.defs().gradient('radial', (add) => {
-        add.stop(0, color1);
-        add.stop(1, color2);
-    });
-
-    gradient.attr({
-        id: gradientId,
-        cx: '50%',
-        cy: '50%',
-        r: '50%'
-    });
-
-    // Aplicar gradiente à forma
-    shape.attr('fill', `url(#${gradientId})`);
-
-    return gradient;
-}
