@@ -12,10 +12,12 @@ const CANVAS_HEIGHT = 800;
  * @param {SVGElement} element - Elemento SVG contendo as formas
  * @param {number} chaosX - Intensidade da distorção no eixo X (0-100)
  * @param {number} chaosY - Intensidade da distorção no eixo Y (0-100)
+ * @param {number} seed - Seed para distorção consistente
  */
-function applyWarpDistortion(element, chaosX, chaosY) {
-    const rand1 = Math.round(random(24, 64));
-    const rand2 = Math.round(random(24, 64));
+function applyWarpDistortion(element, chaosX, chaosY, seed = 12345) {
+    // Usar seed para gerar valores consistentes ao invés de aleatórios
+    const rand1 = 24 + (seed % 40);
+    const rand2 = 24 + ((seed * 13) % 40);
 
     // Pega todos os elementos com coordenadas
     const shapes = element.querySelectorAll('circle, rect, path');

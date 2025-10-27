@@ -191,7 +191,7 @@ function generateShapes(params) {
 
     // Aplicar distorção senoidal
     const svgEl = document.getElementById('chaos-svg');
-    applyWarpDistortion(svgEl, chaosX, chaosY);
+    applyWarpDistortion(svgEl, chaosX, chaosY, seed);
 
     // Reaplicar clip-paths APÓS distorção para garantir contenção
     reapplyClipsAfterDistortion(svgEl, shapeMetadata, frequency);
