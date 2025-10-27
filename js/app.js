@@ -127,8 +127,13 @@ function updateColorBVisibility() {
     const color2BGroup = document.getElementById('color2B-group');
 
     if (color1BGroup && color2BGroup) {
-        color1BGroup.style.display = gradientEnabled ? 'block' : 'none';
-        color2BGroup.style.display = gradientEnabled ? 'block' : 'none';
+        if (gradientEnabled) {
+            color1BGroup.classList.remove('hidden');
+            color2BGroup.classList.remove('hidden');
+        } else {
+            color1BGroup.classList.add('hidden');
+            color2BGroup.classList.add('hidden');
+        }
     }
 }
 

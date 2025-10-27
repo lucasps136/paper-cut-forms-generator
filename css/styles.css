@@ -40,6 +40,10 @@ h2 {
     margin-bottom: 16px;
 }
 
+.control-group.hidden {
+    display: none;
+}
+
 .control-group label {
     display: block;
     margin-bottom: 6px;
