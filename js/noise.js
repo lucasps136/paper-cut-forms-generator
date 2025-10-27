@@ -107,11 +107,9 @@ function createNoisePattern(id, baseColor, options = {}) {
         scale = 50,
         intensity = 50,
         octaves = 3,
-        seed = Math.random() * 1000
+        seed = Math.random() * 1000,
+        patternSize = 200 // Permite customizar o tamanho
     } = options;
-
-    // Pattern size conservador para melhor performance
-    const patternSize = 200;
     const simplex = new SimplexNoise(seed);
 
     // Criar canvas temporário para gerar a textura

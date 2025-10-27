@@ -82,6 +82,42 @@ function generateShapes(params) {
 
     const shapeGroup = svg.group();
 
+    // Calcular tamanho da forma maior para criar textura única
+    const maxFormRadius = frequency * scaleConstant;
+    const maxFormDiameter = maxFormRadius * 2;
+    // Adicionar margem de 20% para garantir cobertura completa
+    const textureSize = Math.ceil(maxFormDiameter * 1.2);
+
+    // Criar textura ÚNICA se necessário (será reutilizada em todas as camadas)
+    let sharedTexturePattern = null;
+    if (textureEnabled) {
+        // Criar pattern de ruído compartilhado
+        const sharedPatternId = 'shared-texture-pattern';
+        sharedTexturePattern = createNoisePattern(sharedPatternId, '#808080', {
+            scale: textureScale,
+            intensity: textureIntensity,
+            octaves: textureOctaves,
+            seed: 12345, // Seed fixo para textura consistente
+            patternSize: textureSize
+        });
+
+        // Criar o pattern SVG uma vez
+        const existingPattern = svg.defs().findOne(`#${sharedPatternId}`);
+        if (existingPattern) {
+            existingPattern.remove();
+        }
+
+        const pattern = svg.defs()
+            .pattern(sharedTexturePattern.size, sharedTexturePattern.size)
+            .attr('id', sharedPatternId)
+            .attr('patternUnits', 'userSpaceOnUse')
+            .attr('x', (SVG_WIDTH / 2) - (sharedTexturePattern.size / 2))
+            .attr('y', (SVG_HEIGHT / 2) - (sharedTexturePattern.size / 2));
+
+        pattern.image(sharedTexturePattern.dataUrl)
+            .size(sharedTexturePattern.size, sharedTexturePattern.size);
+    }
+
     // Array para armazenar metadados das formas para reaplicar clips após distorção
     const shapeMetadata = [];
 
@@ -127,18 +163,22 @@ function generateShapes(params) {
                     intensity: textureEnabled ? textureIntensity : 0,
                     scale: textureScale,
                     octaves: textureOctaves,
-                    seed: i * 789.123
+                    seed: textureEnabled ? 12345 : (i * 789.123), // Seed fixo quando textura ativada
+                    patternSize: textureEnabled ? textureSize : 400 // Usar tamanho calculado quando textura ativada
                 }
             );
             applyNoiseGradientPattern(svg, shape, patternId, patternData);
-        } else if (textureEnabled) {
-            // Cor sólida COM textura
-            applyColorToShape(shape, layerColorA, i, {
-                enabled: true,
-                scale: textureScale,
-                intensity: textureIntensity,
-                octaves: textureOctaves
-            });
+        } else if (textureEnabled && sharedTexturePattern) {
+            // Cor sólida COM textura compartilhada
+            shape.attr('fill', layerColorA);
+
+            // Aplicar textura como overlay
+            const textureLayer = shape.clone();
+            textureLayer
+                .attr('fill', `url(#shared-texture-pattern)`)
+                .attr('opacity', 0.5)
+                .attr('mix-blend-mode', 'overlay');
+            shapeGroup.add(textureLayer);
         } else {
             // Cor sólida SEM textura
             shape.attr('fill', layerColorA);

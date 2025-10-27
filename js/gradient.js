@@ -146,10 +146,9 @@ function createNoiseGradientPattern(id, color1, color2, layerIndex, options = {}
         scale = 50,
         octaves = 3,
         seed = Math.random() * 1000,
-        gradientComplexity = 5
+        gradientComplexity = 5,
+        patternSize = 400 // Permite customizar o tamanho
     } = options;
-
-    const patternSize = 400; // Tamanho maior para mais detalhes
     const simplex = new SimplexNoise(seed + layerIndex * 234.567);
 
     // Criar canvas temporário
