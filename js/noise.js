@@ -83,7 +83,15 @@ function createVectorTextureFilter(svg, filterId, options = {}) {
     filter.element('feBlend').attr({
         in: 'SourceGraphic',
         in2: 'adjusted',
-        mode: 'multiply'
+        mode: 'multiply',
+        result: 'blended'
+    });
+
+    // 5. Usar alpha da forma original para recortar a textura
+    filter.element('feComposite').attr({
+        in: 'blended',
+        in2: 'SourceGraphic',
+        operator: 'in'
     });
 
     return filter;
