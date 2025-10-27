@@ -82,11 +82,8 @@ function generateShapes(params) {
 
     const shapeGroup = svg.group();
 
-    // Calcular tamanho da forma maior para criar textura única
-    const maxFormRadius = frequency * scaleConstant;
-    const maxFormDiameter = maxFormRadius * 2;
-    // Adicionar margem de 20% para garantir cobertura completa
-    const textureSize = Math.ceil(maxFormDiameter * 1.2);
+    // Tamanho da textura baseado na forma maior
+    const textureSize = frequency * scaleConstant;
 
     // Criar textura ÚNICA se necessário (será reutilizada em todas as camadas)
     let sharedTexturePattern = null;
@@ -164,7 +161,7 @@ function generateShapes(params) {
                     scale: textureScale,
                     octaves: textureOctaves,
                     seed: textureEnabled ? 12345 : (i * 789.123), // Seed fixo quando textura ativada
-                    patternSize: textureEnabled ? textureSize : 400 // Usar tamanho calculado quando textura ativada
+                    patternSize: 500 // Tamanho fixo razoável (500px) para performance
                 }
             );
             applyNoiseGradientPattern(svg, shape, patternId, patternData);
