@@ -119,6 +119,20 @@ function initControlsCache() {
 }
 
 /**
+ * Atualiza visibilidade das cores B baseado no estado do gradiente
+ */
+function updateColorBVisibility() {
+    const gradientEnabled = controls.gradientEnabled.checked;
+    const color1BGroup = document.getElementById('color1B-group');
+    const color2BGroup = document.getElementById('color2B-group');
+
+    if (color1BGroup && color2BGroup) {
+        color1BGroup.style.display = gradientEnabled ? 'block' : 'none';
+        color2BGroup.style.display = gradientEnabled ? 'block' : 'none';
+    }
+}
+
+/**
  * Obtém os valores atuais dos controles
  * @returns {object} Objeto com todos os parâmetros de geração
  */
@@ -241,6 +255,7 @@ function initEventListeners() {
         if (this.checked) {
             controls.noiseEnabled.checked = false;
         }
+        updateColorBVisibility();
         generate();
     });
 
@@ -266,6 +281,7 @@ function initEventListeners() {
 function init() {
     initControlsCache();
     initEventListeners();
+    updateColorBVisibility(); // Configurar estado inicial das cores B
     initSVG();
     generate();
 }
