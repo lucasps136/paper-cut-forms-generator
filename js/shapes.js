@@ -131,7 +131,7 @@ function generateShapes(params) {
                     scale: textureScale,
                     octaves: textureOctaves,
                     seed: textureEnabled ? 12345 : (i * 789.123), // Seed fixo quando textura ativada
-                    patternSize: 500 // Tamanho fixo razoável (500px) para performance
+                    patternSize: textureSize // Usar tamanho baseado na forma maior
                 }
             );
             applyNoiseGradientPattern(svg, shape, patternId, patternData);
@@ -143,7 +143,7 @@ function generateShapes(params) {
                 intensity: textureIntensity,
                 octaves: textureOctaves,
                 seed: 12345, // Seed fixo para textura consistente
-                patternSize: 500 // Mesmo tamanho que o gradiente para comportamento idêntico
+                patternSize: textureSize // Usar tamanho baseado na forma maior
             });
         } else {
             // Cor sólida SEM textura
