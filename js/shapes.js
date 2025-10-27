@@ -125,21 +125,22 @@ function generateShapes(params) {
 
         // Aplicar cor base: gradiente OU cor sólida
         if (gradientEnabled) {
-            // Gradiente vetorial distorcido (sem textura embutida)
-            const gradientId = `gradient-${i}`;
-            const gradientData = createDistortedGradient(
-                gradientId,
+            // Gradiente distorcido (sem textura embutida - textura aplicada via filtro)
+            const patternId = `noise-gradient-${i}`;
+            const patternData = createNoiseGradientPattern(
+                patternId,
                 layerColorA,
                 layerColorB,
                 i,
                 {
-                    intensity: 50,  // Intensidade da distorção do gradiente
-                    complexity: 5,   // Número de color stops
-                    seed: 12345,     // Seed fixo para consistência
-                    type: 'radial'
+                    intensity: 0,  // Sempre 0 para gradiente puro (textura vem do filtro)
+                    scale: textureScale,
+                    octaves: textureOctaves,
+                    seed: i * 789.123,
+                    patternSize: 400
                 }
             );
-            applyDistortedGradient(svg, shape, gradientData);
+            applyNoiseGradientPattern(svg, shape, patternId, patternData);
         } else {
             // Cor sólida
             shape.attr('fill', layerColorA);
