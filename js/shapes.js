@@ -52,6 +52,8 @@ function initSVG() {
  * @param {number} params.shadowSize - Tamanho final da sombra
  * @param {string} params.shadowColor - Cor da sombra em hex
  * @param {boolean} params.gradientEnabled - Se deve usar gradientes
+ * @param {boolean} params.transparentBackground - Se o fundo deve ser transparente
+ * @param {string} params.backgroundColor - Cor do fundo em hex
  */
 function generateShapes(params) {
     const {
@@ -76,12 +78,25 @@ function generateShapes(params) {
         shadowBlur = 4,
         shadowSize = 2,
         shadowColor = '#000000',
-        gradientEnabled = false
+        gradientEnabled = false,
+        transparentBackground = false,
+        backgroundColor = '#ffffff'
     } = params;
 
     initSVG();
 
+    // Aplicar cor de fundo ao SVG
+    if (!transparentBackground) {
+        svg.rect(SVG_WIDTH, SVG_HEIGHT)
+            .move(0, 0)
+            .fill(backgroundColor)
+            .back(); // Mover para trás
+    }
+
     const shapeGroup = svg.group();
+
+    // Calcular o tamanho da forma maior (primeira camada)
+    const largestShapeSize = frequency * scaleConstant;
 
     // Criar filtro de textura vetorial ÚNICO se necessário (será reutilizado em todas as camadas)
     if (textureEnabled) {
@@ -195,6 +210,109 @@ function generateShapes(params) {
 
     // Reaplicar clip-paths APÓS distorção para garantir contenção
     reapplyClipsAfterDistortion(svgEl, shapeMetadata, frequency);
+
+    // Adicionar SVG carregado como última camada (se houver)
+    if (loadedSVGContent) {
+        addOverlaySVG(loadedSVGContent, largestShapeSize, backgroundColor, transparentBackground);
+    }
+}
+
+/**
+ * Adiciona um SVG carregado como última camada (overlay)
+ * @param {string} svgContent - Conteúdo do arquivo SVG
+ * @param {number} targetSize - Tamanho da forma maior
+ * @param {string} color - Cor a ser aplicada ao SVG
+ * @param {boolean} isTransparent - Se o fundo é transparente
+ */
+function addOverlaySVG(svgContent, targetSize, color, isTransparent) {
+    try {
+        // Criar um elemento temporário para parsear o SVG
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+        const loadedSvgEl = svgDoc.documentElement;
+
+        // Verificar se é um SVG válido
+        if (loadedSvgEl.nodeName !== 'svg') {
+            console.error('Arquivo não é um SVG válido');
+            return;
+        }
+
+        // Obter viewBox ou dimensões do SVG original
+        const viewBox = loadedSvgEl.getAttribute('viewBox');
+        let originalWidth, originalHeight;
+
+        if (viewBox) {
+            const parts = viewBox.split(/\s+|,/);
+            originalWidth = parseFloat(parts[2]);
+            originalHeight = parseFloat(parts[3]);
+        } else {
+            originalWidth = parseFloat(loadedSvgEl.getAttribute('width')) || 100;
+            originalHeight = parseFloat(loadedSvgEl.getAttribute('height')) || 100;
+        }
+
+        // Calcular tamanho do overlay: 110% do tamanho da forma maior (5% extra acima e abaixo)
+        const overlaySize = targetSize * 1.1;
+
+        // Calcular escala para ajustar o SVG ao tamanho desejado
+        const scale = overlaySize / Math.max(originalWidth, originalHeight);
+
+        // Criar grupo para o overlay
+        const overlayGroup = svg.group()
+            .attr('id', 'overlay-svg');
+
+        // Importar todos os elementos do SVG carregado
+        const svgChildren = Array.from(loadedSvgEl.children);
+        svgChildren.forEach(child => {
+            const clonedChild = child.cloneNode(true);
+
+            // Aplicar cor de fundo a todos os elementos com fill
+            applyColorToSVGElement(clonedChild, color, isTransparent);
+
+            // Adicionar ao grupo
+            overlayGroup.node.appendChild(clonedChild);
+        });
+
+        // Calcular posição central
+        const scaledWidth = originalWidth * scale;
+        const scaledHeight = originalHeight * scale;
+        const x = (SVG_WIDTH - scaledWidth) / 2;
+        const y = (SVG_HEIGHT - scaledHeight) / 2;
+
+        // Aplicar transformação ao grupo
+        overlayGroup.attr('transform', `translate(${x}, ${y}) scale(${scale})`);
+
+        // Garantir que o overlay seja a última camada
+        overlayGroup.front();
+
+    } catch (error) {
+        console.error('Erro ao processar SVG:', error);
+    }
+}
+
+/**
+ * Aplica cor recursivamente a todos os elementos de um SVG
+ * @param {SVGElement} element - Elemento SVG
+ * @param {string} color - Cor a ser aplicada
+ * @param {boolean} isTransparent - Se o fundo é transparente
+ */
+function applyColorToSVGElement(element, color, isTransparent) {
+    // Se o fundo é transparente e o elemento tem fill=none, não aplicar cor
+    if (element.hasAttribute('fill') && element.getAttribute('fill') !== 'none') {
+        element.setAttribute('fill', color);
+    } else if (!element.hasAttribute('fill') && !isTransparent) {
+        // Se não tem atributo fill e o fundo não é transparente, aplicar cor
+        element.setAttribute('fill', color);
+    }
+
+    // Se tem stroke, aplicar a cor também
+    if (element.hasAttribute('stroke') && element.getAttribute('stroke') !== 'none') {
+        element.setAttribute('stroke', color);
+    }
+
+    // Processar filhos recursivamente
+    Array.from(element.children).forEach(child => {
+        applyColorToSVGElement(child, color, isTransparent);
+    });
 }
 
 /**

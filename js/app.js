@@ -98,7 +98,7 @@ function initControlsCache() {
         'color1A', 'color1B', 'color2A', 'color2B', 'textureEnabled', 'textureIntensity',
         'textureScale', 'textureOctaves', 'shadowEnabled', 'shadowOffsetX',
         'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor',
-        'gradientEnabled'
+        'gradientEnabled', 'transparentBackground', 'backgroundColor', 'svgUpload'
     ];
 
     const valueDisplayIds = [
@@ -137,6 +137,22 @@ function updateColorBVisibility() {
 }
 
 /**
+ * Atualiza visibilidade da cor de fundo baseado no estado do checkbox de transparência
+ */
+function updateBackgroundColorVisibility() {
+    const transparentBg = controls.transparentBackground.checked;
+    const bgColorGroup = document.getElementById('backgroundColor-group');
+
+    if (bgColorGroup) {
+        if (transparentBg) {
+            bgColorGroup.classList.add('hidden');
+        } else {
+            bgColorGroup.classList.remove('hidden');
+        }
+    }
+}
+
+/**
  * Obtém os valores atuais dos controles
  * @returns {object} Objeto com todos os parâmetros de geração
  */
@@ -163,7 +179,9 @@ function getControlValues() {
         shadowBlur: parseFloat(controls.shadowBlur.value),
         shadowSize: parseFloat(controls.shadowSize.value),
         shadowColor: controls.shadowColor.value,
-        gradientEnabled: controls.gradientEnabled.checked
+        gradientEnabled: controls.gradientEnabled.checked,
+        transparentBackground: controls.transparentBackground.checked,
+        backgroundColor: controls.backgroundColor.value
     };
 }
 
@@ -267,10 +285,21 @@ function initEventListeners() {
         generate();
     });
 
+    // Fundo transparente
+    controls.transparentBackground.addEventListener('change', function() {
+        updateBackgroundColorVisibility();
+        generate();
+    });
+
+    // Upload de SVG
+    controls.svgUpload.addEventListener('change', function(e) {
+        handleSVGUpload(e);
+    });
+
     // Regenerar quando qualquer controle mudar
     ['shape', 'frequency', 'scale', 'chaosY', 'chaosX', 'rotate', 'seed', 'color1A', 'color1B', 'color2A', 'color2B',
      'textureIntensity', 'textureScale', 'textureOctaves',
-     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor'].forEach(id => {
+     'shadowEnabled', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur', 'shadowSize', 'shadowColor', 'backgroundColor'].forEach(id => {
         controls[id].addEventListener('input', generate);
     });
 }
@@ -282,8 +311,34 @@ function init() {
     initControlsCache();
     initEventListeners();
     updateColorBVisibility(); // Configurar estado inicial das cores B
+    updateBackgroundColorVisibility(); // Configurar estado inicial do fundo
     initSVG();
     generate();
+}
+
+/**
+ * Variável global para armazenar o conteúdo do SVG carregado
+ */
+let loadedSVGContent = null;
+
+/**
+ * Manipula o upload de arquivo SVG
+ * @param {Event} event - Evento de mudança do input de arquivo
+ */
+function handleSVGUpload(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        loadedSVGContent = null;
+        generate();
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        loadedSVGContent = e.target.result;
+        generate();
+    };
+    reader.readAsText(file);
 }
 
 // Iniciar aplicação quando DOM estiver pronto
