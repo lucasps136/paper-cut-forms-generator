@@ -52,9 +52,9 @@ const CONFIG = {
     },
     chaos: {
         min: 0,
-        max: 100,
-        randomMin: 20,
-        randomMax: 80
+        max: 60,
+        randomMin: 15,
+        randomMax: 50
     },
     shadow: {
         offset: {
